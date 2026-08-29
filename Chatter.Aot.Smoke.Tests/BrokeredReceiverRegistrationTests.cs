@@ -5,14 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Chatter.Aot.Smoke.Tests;
 
-// Red baseline for #275/#276: ChatterMessageBrokerExtensions.AddAllReceivers finds
-// [BrokeredMessage]-decorated receiver types via assemblies.GetTypes() (a raw reflection assembly
-// scan, same trim-unsafe family as Scrutor). Empirically verified: the scan finds and registers
-// ScrutorPongMessage's receiver (BrokeredMessageReceiver<ScrutorPongMessage> is mapped to
-// IBrokeredMessageReceiver<ScrutorPongMessage>), but resolving it THROWS because the receiver's
-// constructor lost its reflection-visible metadata under full trimming — same root mechanism as
-// ScrutorHandlerRegistrationTests. See that file's comment for the full explanation of why this is a
-// thrown exception rather than #275's originally-predicted silent empty result.
+// ChatterMessageBrokerExtensions.AddAllReceivers finds [BrokeredMessage]-decorated receiver types via
+// assemblies.GetTypes() (a raw reflection assembly scan, same trim-unsafe family as Scrutor).
+// Empirically verified: the scan finds and registers ScrutorPongMessage's receiver
+// (BrokeredMessageReceiver<ScrutorPongMessage> is mapped to IBrokeredMessageReceiver<ScrutorPongMessage>),
+// but resolving it THROWS because the receiver's constructor lost its reflection-visible metadata
+// under full trimming — same root mechanism as ScrutorHandlerRegistrationTests. See that file's
+// comment for the full explanation of why this is a thrown exception, not a silent empty result.
 public class BrokeredReceiverRegistrationTests
 {
     [Fact]

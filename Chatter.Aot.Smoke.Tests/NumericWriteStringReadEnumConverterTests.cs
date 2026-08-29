@@ -4,9 +4,9 @@ using System.Text.Json;
 
 namespace Chatter.Aot.Smoke.Tests;
 
-// Red baseline for #275/#276: NumericWriteStringReadEnumConverter.CreateConverter uses
-// Type.MakeGenericType + Activator.CreateInstance to build a closed EnumConverter<TEnum> per
-// encountered enum type. Hard Native-AOT-throw site per #275's audit, confirmed here: because
+// NumericWriteStringReadEnumConverter.CreateConverter uses Type.MakeGenericType +
+// Activator.CreateInstance to build a closed EnumConverter<TEnum> per encountered enum type.
+// Hard Native-AOT-throw site, confirmed here: because
 // EnumConverter<PingStatus> is never instantiated via a statically-visible closed generic anywhere in
 // the program, the AOT compiler never generates native code for that instantiation, so
 // MakeGenericType/Activator.CreateInstance cannot materialize it at runtime.

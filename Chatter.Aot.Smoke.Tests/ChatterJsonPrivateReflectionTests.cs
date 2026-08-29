@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Chatter.Aot.Smoke.Tests;
 
-// Red baseline for #275/#276: ChatterJson.cs's EnableNonPublicSetters (~line 152) and
+// ChatterJson.cs's EnableNonPublicSetters (~line 152) and
 // EnableNonPublicParameterlessConstructor (~line 214) contract-model modifiers use
 // PropertyInfo.SetValue / ConstructorInfo.Invoke via reflection to restore Newtonsoft parity for
 // consumer DTOs with non-public setters/constructors. Empirically verified: under full Native AOT

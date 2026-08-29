@@ -5,9 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Chatter.Aot.Smoke.Tests;
 
-// Red baseline for #275/#276: QueryDispatcher.cs's non-generic Query<TResult>(IQuery<TResult>[, ctx])
-// overload (~lines 27-44) uses `dynamic` + Type.MakeGenericType to resolve and invoke the handler.
-// This is a hard Native-AOT-throw site per #275's audit, confirmed here: under the published,
+// QueryDispatcher.cs's non-generic Query<TResult>(IQuery<TResult>[, ctx]) overload (~lines 27-44)
+// uses `dynamic` + Type.MakeGenericType to resolve and invoke the handler.
+// This is a hard Native-AOT-throw site, confirmed here: under the published,
 // executed native binary the `dynamic` call-site binder (Microsoft.CSharp.RuntimeBinder) cannot
 // resolve the concrete handler's Handle method via late-bound reflection, since the required
 // reflection metadata was trimmed. The handler IS correctly registered and resolvable (this test
