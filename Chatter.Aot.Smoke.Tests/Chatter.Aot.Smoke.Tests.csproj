@@ -5,8 +5,6 @@
     <Nullable>enable</Nullable>
     <OutputType>Exe</OutputType>
     <PublishAot>true</PublishAot>
-    <!-- net10.0-ONLY by design: this project validates the published-and-executed Native AOT binary
-         itself, not build-time analysis. There is nothing net8.0-specific to gain by dual-targeting it. -->
     <TargetFramework>net10.0</TargetFramework>
     <RuntimeIdentifiers>linux-x64</RuntimeIdentifiers>
     <IsPackable>false</IsPackable>
@@ -26,9 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Deliberately NOT referencing Chatter.Testing.Core: it uses Moq (Castle DynamicProxy /
-         Reflection.Emit), which is categorically incompatible with Native AOT. Fakes for this
-         project are hand-rolled under Fakes/, following Chatter.Testing.Core's Moq-free creator pattern. -->
     <ProjectReference Include="..\src\Chatter.CQRS\src\Chatter.CQRS\Chatter.CQRS.csproj" />
     <ProjectReference Include="..\src\Chatter.MessageBrokers\src\Chatter.MessageBrokers\Chatter.MessageBrokers.csproj" />
   </ItemGroup>

@@ -1,13 +1,4 @@
 #!/usr/bin/env python3
-"""Render the Chatter.Aot.Smoke.Tests TRX results as a GitHub Actions job-summary table.
-
-Cross-references each test's outcome against the "AotStatus=KnownGap" trait membership
-(supplied separately, since this runner's TRX output does not carry trait/category data)
-so a reader can immediately see which failures are documented AOT/trim gaps versus a
-genuine new regression.
-
-Usage: summarize_aot_smoke.py <results.trx> <known-gap-tests.json>
-"""
 import json
 import sys
 import xml.etree.ElementTree as ET
@@ -23,8 +14,6 @@ def main() -> int:
     trx_path, known_gap_path = sys.argv[1], sys.argv[2]
 
     with open(known_gap_path, encoding="utf-8") as f:
-        # The runner's -list output is normally a single JSON array line, but defend against any
-        # stray trailing output (e.g. an ANSI reset code) by decoding only the leading JSON value.
         raw = f.read()
         known_gap_names = set(json.JSONDecoder().raw_decode(raw)[0])
 

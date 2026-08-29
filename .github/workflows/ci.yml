@@ -142,9 +142,6 @@ jobs:
           cache: true
           cache-dependency-path: |
             Chatter.Aot.Smoke.Tests/packages.lock.json
-      # ubuntu-latest ships clang but NOT zlib1g-dev; the Native AOT ILC toolchain needs both
-      # (matches Microsoft's own Native AOT prerequisite docs' `apt-get install clang zlib1g-dev` -
-      # clang is already present on this image, so only zlib1g-dev needs installing).
       - name: Install Native AOT prerequisites
         run: |
           sudo apt-get update
@@ -153,20 +150,10 @@ jobs:
         run: dotnet restore Chatter.Aot.Smoke.Tests/Chatter.Aot.Smoke.Tests.csproj --locked-mode
       - name: Publish (Native AOT)
         run: dotnet publish Chatter.Aot.Smoke.Tests/Chatter.Aot.Smoke.Tests.csproj -c Release -r linux-x64 --no-restore
-      # The published binary is a standalone native executable with its own xUnit v3 in-process
-      # runner/CLI (xunit.v3.aot.mtp-v2) - not `dotnet test`. Running it directly is the only way to
-      # observe real Native AOT behavior; `dotnet test` runs under JIT and does not reproduce any of
-      # these failures (verified while writing this suite - all tests here fail differently, or not
-      # at all, under `dotnet test`).
       - name: Run required (untagged) AOT smoke tests
         run: |
           BIN=Chatter.Aot.Smoke.Tests/bin/Release/net10.0/linux-x64/publish/Chatter.Aot.Smoke.Tests
           "$BIN" -noColor -trait- "AotStatus=KnownGap"
-      # Known gaps are documented, expected-red baselines (see each test file's comments) and must
-      # never block unrelated PRs - but they still need to run and report every PR, so a real
-      # regression in one (or a gap unexpectedly closing) is visible immediately rather than
-      # discovered later. This step always runs and never fails the job by itself; only the untagged
-      # gate step above can fail it.
       - name: Run full AOT smoke report (including known gaps; never blocks)
         if: always()
         run: |

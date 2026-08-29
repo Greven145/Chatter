@@ -6,17 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Chatter.Aot.Smoke.Tests;
 
-// CqrsExtensions.AddCommandHandlers/AddQueryHandlers drive handler registration via Scrutor's
-// services.Scan() (Assembly.GetTypes() + open-generic interface matching). Empirically verified
-// against the published, executed native binary (not just build-time analysis): Scrutor's scan DOES
-// find and register the handler (a ServiceDescriptor for IMessageHandler<TCommand>/
-// IQueryHandler<TQuery,TResult> mapping to the concrete handler type is present), but resolving it
-// then THROWS, because the handler's own constructor lost its reflection-visible metadata under full
-// trimming (nothing else in the program calls `new HandlerType()` or otherwise roots it, so ILLink
-// strips the constructor's reflection metadata even though the type itself survives for
-// Assembly.GetTypes() purposes) — a loud DI resolution exception, not a silent wrong/empty result.
-// When Phase 2 lands an additive AOT-safe registration path, flip these assertions to expect
-// successful resolution and drop [Trait("AotStatus","KnownGap")] in the same PR.
 public class ScrutorHandlerRegistrationTests
 {
     [Fact]
