@@ -11,6 +11,12 @@
           "Azure.Core": "1.53.0"
         }
       },
+      "Microsoft.NET.ILLink.Tasks": {
+        "type": "Direct",
+        "requested": "[10.0.11, )",
+        "resolved": "10.0.11",
+        "contentHash": "U5RAeZrH+PDrQb1R8C4q2oNZc7H6dsLQD17kISdcXqtqE3f1o7CAMNKaCb25kLh8mfxZaLNX21gAxJ+2EjdiRA=="
+      },
       "Azure.Core": {
         "type": "Transitive",
         "resolved": "1.53.0",
@@ -417,7 +423,7 @@
         "type": "Project",
         "dependencies": {
           "Azure.Messaging.ServiceBus": "[7.20.1, )",
-          "Chatter.MessageBrokers": "[0.13.2, )",
+          "Chatter.MessageBrokers": "[0.14.1, )",
           "Scrutor": "[3.3.0, )"
         }
       }
@@ -431,6 +437,12 @@
         "dependencies": {
           "Azure.Core": "1.53.0"
         }
+      },
+      "Microsoft.NET.ILLink.Tasks": {
+        "type": "Direct",
+        "requested": "[8.0.30, )",
+        "resolved": "8.0.30",
+        "contentHash": "SfmwuZjUPBTEoBMAsXZ/hWkaEK9oL+Y/UtAx7N6RyWHfcMt9J0ExrNPuOgTyPbCXIyiTBFsxFNrPLEZNPmJcvA=="
       },
       "Azure.Core": {
         "type": "Transitive",
@@ -871,7 +883,7 @@
         "type": "Project",
         "dependencies": {
           "Azure.Messaging.ServiceBus": "[7.20.1, )",
-          "Chatter.MessageBrokers": "[0.13.2, )",
+          "Chatter.MessageBrokers": "[0.14.1, )",
           "Scrutor": "[3.3.0, )"
         }
       }
