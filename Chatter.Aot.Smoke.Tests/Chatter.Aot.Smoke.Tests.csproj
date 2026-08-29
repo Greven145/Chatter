@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+    <PublishAot>true</PublishAot>
+    <!-- net10.0-ONLY by design (#276): validates the published-and-executed Native AOT binary itself,
+         not build-time analysis. There is nothing net8.0-specific to gain by dual-targeting this project. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeIdentifiers>linux-x64</RuntimeIdentifiers>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);CA1050</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.aot.mtp-v2" Version="4.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Deliberately NOT referencing Chatter.Testing.Core: it uses Moq (Castle DynamicProxy /
+         Reflection.Emit), which is categorically incompatible with Native AOT. Fakes for this
+         project are hand-rolled under Fakes/, following Chatter.Testing.Core's Moq-free creator pattern. -->
+    <ProjectReference Include="..\src\Chatter.CQRS\src\Chatter.CQRS\Chatter.CQRS.csproj" />
+    <ProjectReference Include="..\src\Chatter.MessageBrokers\src\Chatter.MessageBrokers\Chatter.MessageBrokers.csproj" />
+  </ItemGroup>
+
+</Project>

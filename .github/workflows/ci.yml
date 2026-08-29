@@ -7,12 +7,16 @@ on:
     paths:
       - 'src/**'
       - 'tests/**'
+      - 'Chatter.Aot.Smoke.Tests/**'
+      - '.github/scripts/summarize_aot_smoke.py'
       - '.github/workflows/ci.yml'
   push:
     branches: [master]
     paths:
       - 'src/**'
       - 'tests/**'
+      - 'Chatter.Aot.Smoke.Tests/**'
+      - '.github/scripts/summarize_aot_smoke.py'
       - '.github/workflows/ci.yml'
 
 permissions:
@@ -125,6 +129,64 @@ jobs:
         run: dotnet build Chatter.sln -c Release --no-restore
       - name: Integration test (all adapters)
         run: dotnet test Chatter.sln -c Release --no-build --filter 'Category=Integration'
+
+  aot-smoke:
+    name: aot smoke (native AOT, net10.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: |
+            Chatter.Aot.Smoke.Tests/packages.lock.json
+      # ubuntu-latest ships clang but NOT zlib1g-dev; the Native AOT ILC toolchain needs both
+      # (matches Microsoft's own Native AOT prerequisite docs' `apt-get install clang zlib1g-dev` -
+      # clang is already present on this image, so only zlib1g-dev needs installing).
+      - name: Install Native AOT prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zlib1g-dev
+      - name: Restore
+        run: dotnet restore Chatter.Aot.Smoke.Tests/Chatter.Aot.Smoke.Tests.csproj --locked-mode
+      - name: Publish (Native AOT)
+        run: dotnet publish Chatter.Aot.Smoke.Tests/Chatter.Aot.Smoke.Tests.csproj -c Release -r linux-x64 --no-restore
+      # The published binary is a standalone native executable with its own xUnit v3 in-process
+      # runner/CLI (xunit.v3.aot.mtp-v2) - not `dotnet test`. Running it directly is the only way to
+      # observe real Native AOT behavior; `dotnet test` runs under JIT and does not reproduce any of
+      # these failures (verified while writing this suite - all tests here fail differently, or not
+      # at all, under `dotnet test`).
+      - name: Run required (untagged) AOT smoke tests
+        run: |
+          BIN=Chatter.Aot.Smoke.Tests/bin/Release/net10.0/linux-x64/publish/Chatter.Aot.Smoke.Tests
+          "$BIN" -noColor -trait- "AotStatus=KnownGap"
+      # Known gaps are documented, expected-red baselines (see each test file's comments) and must
+      # never block unrelated PRs - but they still need to run and report every PR, so a real
+      # regression in one (or a gap unexpectedly closing) is visible immediately rather than
+      # discovered later. This step always runs and never fails the job by itself; only the untagged
+      # gate step above can fail it.
+      - name: Run full AOT smoke report (including known gaps; never blocks)
+        if: always()
+        run: |
+          mkdir -p artifacts/aot-smoke
+          BIN=Chatter.Aot.Smoke.Tests/bin/Release/net10.0/linux-x64/publish/Chatter.Aot.Smoke.Tests
+          "$BIN" -noColor -list tests/json -trait "AotStatus=KnownGap" > artifacts/aot-smoke/known-gap-tests.json
+          "$BIN" -noColor -ignoreFailures -result-trx artifacts/aot-smoke/results.trx
+      - name: Publish AOT smoke job summary
+        if: always()
+        run: |
+          python3 .github/scripts/summarize_aot_smoke.py \
+            artifacts/aot-smoke/results.trx \
+            artifacts/aot-smoke/known-gap-tests.json \
+            >> "$GITHUB_STEP_SUMMARY" || true
+      - name: Upload AOT smoke results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aot-smoke-results
+          path: artifacts/aot-smoke/**
 
   real-namespace-integration:
     name: integration (azureservicebus real namespace)
