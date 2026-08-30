@@ -410,5 +410,20 @@ namespace Chatter.MessageBrokers.Tests.UsingJsonBodyConverter
             result.Name.Should().Be("abc");
             result.Value.Should().Be(42);
         }
+
+        // PARITY (adversarial-review finding, verified rather than assumed): Stringify(null) still
+        // calls JsonSerializer.Serialize<object>(null, _options), which DOES consult the injected
+        // resolver — but a null root value writes the literal JSON null without needing JsonTypeInfo
+        // for `object`, so this holds even though neither BodyPocoJsonContext nor
+        // ChatterMessageBrokerJsonContext registers `object` itself.
+        [Fact]
+        public void MustStringifyNullObjectAsJsonNullOnTheInjectedOptionsPathWithoutThrowing()
+        {
+            var aotOptions = ChatterJson.CreateAotOptions(BodyPocoJsonContext.Default);
+            var sut = new JsonBodyConverter(aotOptions);
+            object body = null;
+
+            sut.Stringify(body).Should().Be("null");
+        }
     }
 }

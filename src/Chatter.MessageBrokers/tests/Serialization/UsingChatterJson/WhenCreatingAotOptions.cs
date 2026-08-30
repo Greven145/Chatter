@@ -95,6 +95,75 @@ namespace Chatter.MessageBrokers.Tests.Serialization.UsingChatterJson
             act.Should().Throw<NotSupportedException>();
         }
 
+        // SPIKE (adversarial-review CRITICAL finding, verify before trusting): does a leniency setting
+        // on the outer JsonSerializerOptions (PropertyNameCaseInsensitive, NumberHandling) actually
+        // apply when the JsonTypeInfo comes from a combined source-gen resolver, or is it baked in at
+        // compile time via [JsonSourceGenerationOptions] and therefore ignored here?
+        [Fact]
+        public void SPIKE_MustReadCamelCasePropertyNameThroughSourceGeneratedResolver()
+        {
+            var options = ChatterJson.CreateAotOptions(PocoJsonContext.Default);
+
+            var result = JsonSerializer.Deserialize<Poco>("{\"name\":\"abc\",\"value\":42}", options);
+
+            result.Should().NotBeNull();
+            result.Name.Should().Be("abc");
+            result.Value.Should().Be(42);
+        }
+
+        [Fact]
+        public void SPIKE_MustReadQuotedNumberThroughSourceGeneratedResolver()
+        {
+            var options = ChatterJson.CreateAotOptions(PocoJsonContext.Default);
+
+            var result = JsonSerializer.Deserialize<Poco>("{\"Name\":\"abc\",\"Value\":\"42\"}", options);
+
+            result.Should().NotBeNull();
+            result.Value.Should().Be(42);
+        }
+
+        private class FieldPoco
+        {
+            public string Name;
+        }
+
+        [JsonSerializable(typeof(FieldPoco))]
+        private partial class FieldPocoJsonContext : JsonSerializerContext
+        {
+        }
+
+        [Fact]
+        public void SPIKE_MustReadPublicFieldThroughSourceGeneratedResolver()
+        {
+            var options = ChatterJson.CreateAotOptions(FieldPocoJsonContext.Default);
+
+            var result = JsonSerializer.Deserialize<FieldPoco>("{\"Name\":\"abc\"}", options);
+
+            result.Should().NotBeNull();
+            result.Name.Should().Be("abc");
+        }
+
+        private class GetterOnlyCollectionPoco
+        {
+            public System.Collections.Generic.List<string> Items { get; } = new();
+        }
+
+        [JsonSerializable(typeof(GetterOnlyCollectionPoco))]
+        private partial class GetterOnlyCollectionPocoJsonContext : JsonSerializerContext
+        {
+        }
+
+        [Fact]
+        public void SPIKE_MustPopulateGetterOnlyCollectionThroughSourceGeneratedResolver()
+        {
+            var options = ChatterJson.CreateAotOptions(GetterOnlyCollectionPocoJsonContext.Default);
+
+            var result = JsonSerializer.Deserialize<GetterOnlyCollectionPoco>("{\"Items\":[\"a\",\"b\"]}", options);
+
+            result.Should().NotBeNull();
+            result.Items.Should().Equal("a", "b");
+        }
+
         // Envelope-shape coverage: Chatter's own internal context (combined in behind the consumer's)
         // supplies Dictionary<string,object>/List<object> metadata for MessageContext header values
         // materialized via the shared MaterializingObjectConverter, without the consumer needing to

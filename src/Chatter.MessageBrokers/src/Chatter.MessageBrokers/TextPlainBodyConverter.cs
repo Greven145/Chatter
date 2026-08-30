@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Text.Json;
 
 namespace Chatter.MessageBrokers
 {
@@ -8,9 +9,9 @@ namespace Chatter.MessageBrokers
         private const string _stronglyTypedConversionFailureMessage = "A strongly typed body is required. Consider using a content type like application/json.";
         private readonly JsonBodyConverter _jsonBodyConverter;
 
-        public TextPlainBodyConverter()
+        public TextPlainBodyConverter(JsonSerializerOptions jsonOptions = null)
         {
-            _jsonBodyConverter = new JsonBodyConverter();
+            _jsonBodyConverter = new JsonBodyConverter(jsonOptions);
         }
 
         //TODO: This implementation is temporary. Change this impl. to some sort of successor pattern

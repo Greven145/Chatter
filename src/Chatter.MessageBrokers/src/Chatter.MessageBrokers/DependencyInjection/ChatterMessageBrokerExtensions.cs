@@ -174,7 +174,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns>An <see cref="IChatterBuilder"/> used to configure Chatter capabilities</returns>
         public static IChatterBuilder WithAotJsonSerialization(this IChatterBuilder builder, JsonSerializerContext consumerJsonContext)
         {
-            builder.Services.AddSingleton(ChatterJson.CreateAotOptions(consumerJsonContext));
+            builder.Services.AddIfNotRegistered(ServiceLifetime.Singleton, _ => ChatterJson.CreateAotOptions(consumerJsonContext));
             return builder;
         }
 
