@@ -12,7 +12,35 @@ namespace Chatter.MessageBrokers
     {
         // INVARIANT: Options is constructed once and reused. STJ documents per-call construction
         // as a performance cliff; a single cached instance is the prescribed pattern.
-        public static readonly JsonSerializerOptions Options = new JsonSerializerOptions
+        public static readonly JsonSerializerOptions Options = CreateOptions(new DefaultJsonTypeInfoResolver
+        {
+            Modifiers = { EnableNonPublicSetters, EnableNonPublicParameterlessConstructor }
+        });
+
+        /// <summary>
+        /// Builds an AOT/trim-safe <see cref="JsonSerializerOptions"/> sharing every non-reflection setting
+        /// with <see cref="Options"/>, but resolving types via <paramref name="consumerJsonContext"/> combined
+        /// with Chatter's own envelope-type context instead of reflection. Register once at DI setup (e.g.
+        /// via <c>WithAotJsonSerialization</c>), not per message.
+        /// </summary>
+        /// <remarks>
+        /// Message DTOs serialized through the returned options need public/internal settable members or an
+        /// accessible <see cref="System.Text.Json.Serialization.JsonConstructorAttribute"/> — source generation
+        /// cannot touch a private member (throws <see cref="NotSupportedException"/> at runtime), the same
+        /// hard C#-accessibility wall <see cref="Options"/>' reflection modifiers below exist to work around.
+        /// This is a permanent limitation of this path, not a gap to close.
+        /// </remarks>
+        public static JsonSerializerOptions CreateAotOptions(System.Text.Json.Serialization.JsonSerializerContext consumerJsonContext)
+        {
+            if (consumerJsonContext is null)
+            {
+                throw new ArgumentNullException(nameof(consumerJsonContext));
+            }
+
+            return CreateOptions(JsonTypeInfoResolver.Combine(consumerJsonContext, ChatterMessageBrokerJsonContext.Default));
+        }
+
+        private static JsonSerializerOptions CreateOptions(IJsonTypeInfoResolver typeInfoResolver) => new JsonSerializerOptions
         {
             // ChatterJsonEncoder is intentional: it preserves byte-for-byte wire compatibility with
             // the prior Newtonsoft.Json serialization, which emits +, <, >, &, ', /, and ALL
@@ -99,10 +127,7 @@ namespace Chatter.MessageBrokers
             // This companion modifier wires JsonTypeInfo.CreateObject to invoke the non-public
             // parameterless ctor — restoring Newtonsoft's instantiation so the setter modifier can
             // then populate the private members. DESERIALIZE-side only; no serialize/wire change.
-            TypeInfoResolver = new DefaultJsonTypeInfoResolver
-            {
-                Modifiers = { EnableNonPublicSetters, EnableNonPublicParameterlessConstructor }
-            },
+            TypeInfoResolver = typeInfoResolver,
 
             // MaterializingObjectConverter restores CLR-type fidelity at every object-typed READ position
             // (message-context values, RoutingSlip.Attachments values, any DTO `object` member): STJ would

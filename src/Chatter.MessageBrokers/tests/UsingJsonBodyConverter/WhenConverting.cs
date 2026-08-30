@@ -2,11 +2,12 @@ using FluentAssertions;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 using Xunit;
 
 namespace Chatter.MessageBrokers.Tests.UsingJsonBodyConverter
 {
-    public class WhenConverting : Testing.Core.Context
+    public partial class WhenConverting : Testing.Core.Context
     {
         private readonly JsonBodyConverter _sut = new JsonBodyConverter();
 
@@ -370,6 +371,59 @@ namespace Chatter.MessageBrokers.Tests.UsingJsonBodyConverter
             var result = _sut.Convert<ObjectPositionBoolPoco>(bytes);
 
             result.Flag.Should().BeOfType<bool>().And.Be(true);
+        }
+
+        [JsonSerializable(typeof(BodyPoco))]
+        private partial class BodyPocoJsonContext : JsonSerializerContext
+        {
+        }
+
+        // AOT dual path: an explicitly-injected JsonSerializerOptions (e.g. from
+        // ChatterJson.CreateAotOptions via WithAotJsonSerialization) is used INSTEAD of
+        // ChatterJson.Options — the ctor's default-parameter fallback (exercised by every other test
+        // in this file via `_sut = new JsonBodyConverter()`) is bypassed entirely.
+        [Fact]
+        public void MustUseAnInjectedOptionsInstanceInsteadOfTheReflectionDefault()
+        {
+            var aotOptions = ChatterJson.CreateAotOptions(BodyPocoJsonContext.Default);
+            var sut = new JsonBodyConverter(aotOptions);
+            var original = new BodyPoco { Name = "abc", Value = 42 };
+
+            var bytes = sut.Convert(original);
+            var result = sut.Convert<BodyPoco>(bytes);
+
+            result.Name.Should().Be("abc");
+            result.Value.Should().Be(42);
+        }
+
+        // A PrivateSetterBodyPoco (reflection-only per ChatterJson.CreateAotOptions' documented
+        // limitation) round-trips fine on the DEFAULT ctor path — confirms the new optional parameter
+        // did not change JsonBodyConverter's default behavior for existing consumers.
+        [Fact]
+        public void MustStillPopulatePrivateSettersOnTheDefaultConstructorPath()
+        {
+            var sut = new JsonBodyConverter();
+            var bytes = sut.GetBytes("{\"Name\":\"abc\",\"Value\":42}");
+
+            var result = sut.Convert<PrivateSetterBodyPoco>(bytes);
+
+            result.Name.Should().Be("abc");
+            result.Value.Should().Be(42);
+        }
+
+        // PARITY (adversarial-review finding, verified rather than assumed): Stringify(null) still
+        // calls JsonSerializer.Serialize<object>(null, _options), which DOES consult the injected
+        // resolver — but a null root value writes the literal JSON null without needing JsonTypeInfo
+        // for `object`, so this holds even though neither BodyPocoJsonContext nor
+        // ChatterMessageBrokerJsonContext registers `object` itself.
+        [Fact]
+        public void MustStringifyNullObjectAsJsonNullOnTheInjectedOptionsPathWithoutThrowing()
+        {
+            var aotOptions = ChatterJson.CreateAotOptions(BodyPocoJsonContext.Default);
+            var sut = new JsonBodyConverter(aotOptions);
+            object body = null;
+
+            sut.Stringify(body).Should().Be("null");
         }
     }
 }

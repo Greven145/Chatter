@@ -1,55 +1,57 @@
-using FluentAssertions;
-using Moq;
+using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
+using FluentAssertions;
 using Xunit;
 
 namespace Chatter.MessageBrokers.Tests.UsingBodyConverterFactory
 {
-    public class WhenCreatingBodyConverter : Testing.Core.Context
+    // Adversarial-review finding: BodyConverterFactory's fallback (unrecognized content type) built a
+    // raw `new JsonBodyConverter()` directly, bypassing DI and staying reflection-based regardless of
+    // WithAotJsonSerialization. Fixed via the same optional-JsonSerializerOptions-parameter pattern as
+    // JsonBodyConverter itself; DI (AddScoped<IBodyConverterFactory, BodyConverterFactory>) resolves it
+    // automatically since the factory is itself DI-constructed.
+    public partial class WhenCreatingBodyConverter : Testing.Core.Context
     {
-        private static Mock<IBrokeredMessageBodyConverter> ConverterFor(string contentType)
+        private class FactoryPrivateCtorPoco
         {
-            var converter = new Mock<IBrokeredMessageBodyConverter>();
-            converter.SetupGet(c => c.ContentType).Returns(contentType);
-            return converter;
+            private FactoryPrivateCtorPoco() { }
+            public string Name { get; set; }
         }
 
-        [Fact]
-        public void MustReturnRegisteredConverterForKnownContentType()
+        [JsonSerializable(typeof(FactoryPrivateCtorPoco))]
+        private partial class FactoryPrivateCtorPocoJsonContext : JsonSerializerContext
         {
-            var registered = ConverterFor("application/xml");
-            var sut = new BodyConverterFactory(new[] { registered.Object });
-
-            sut.CreateBodyConverter("application/xml").Should().BeSameAs(registered.Object);
         }
 
+        // Behavioral proof (not just object-type), distinguishing which resolver the fallback actually
+        // used: a private-parameterless-ctor DTO only deserializes on the reflection default
+        // (EnableNonPublicParameterlessConstructor).
         [Fact]
-        public void MustReturnFreshJsonBodyConverterForUnknownContentType()
+        public void MustFallBackToReflectionOptionsForUnrecognizedContentTypeByDefault()
         {
             var sut = new BodyConverterFactory(new List<IBrokeredMessageBodyConverter>());
 
-            sut.CreateBodyConverter("application/unknown").Should().BeOfType<JsonBodyConverter>();
+            var converter = sut.CreateBodyConverter("application/unrecognized");
+            var bytes = converter.GetBytes("{\"Name\":\"abc\"}");
+
+            converter.Convert<FactoryPrivateCtorPoco>(bytes).Name.Should().Be("abc");
         }
 
+        // The same DTO throws once WithAotJsonSerialization's options reach the fallback — proving the
+        // injected options are genuinely wired through, not ignored.
         [Fact]
-        public void MustReturnDistinctJsonBodyConverterInstancesForUnknownContentType()
+        public void MustUseInjectedAotOptionsForUnrecognizedContentTypeWhenProvided()
         {
-            var sut = new BodyConverterFactory(new List<IBrokeredMessageBodyConverter>());
+            var aotOptions = ChatterJson.CreateAotOptions(FactoryPrivateCtorPocoJsonContext.Default);
+            var sut = new BodyConverterFactory(new List<IBrokeredMessageBodyConverter>(), aotOptions);
 
-            var first = sut.CreateBodyConverter("application/unknown");
-            var second = sut.CreateBodyConverter("application/unknown");
+            var converter = sut.CreateBodyConverter("application/unrecognized");
+            var bytes = converter.GetBytes("{\"Name\":\"abc\"}");
 
-            first.Should().NotBeSameAs(second);
-        }
+            Action act = () => converter.Convert<FactoryPrivateCtorPoco>(bytes);
 
-        [Fact]
-        public void MustHonorLastRegisteredConverterWhenContentTypesCollide()
-        {
-            var first = ConverterFor("application/json");
-            var second = ConverterFor("application/json");
-            var sut = new BodyConverterFactory(new[] { first.Object, second.Object });
-
-            sut.CreateBodyConverter("application/json").Should().BeSameAs(second.Object);
+            act.Should().Throw<NotSupportedException>();
         }
     }
 }

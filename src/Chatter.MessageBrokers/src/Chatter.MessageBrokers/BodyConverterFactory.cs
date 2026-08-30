@@ -1,14 +1,17 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace Chatter.MessageBrokers
 {
     public class BodyConverterFactory : IBodyConverterFactory
     {
         private readonly ConcurrentDictionary<string, IBrokeredMessageBodyConverter> _bodyConverterProviders = new ConcurrentDictionary<string, IBrokeredMessageBodyConverter>();
+        private readonly JsonSerializerOptions _jsonOptions;
 
-        public BodyConverterFactory(IEnumerable<IBrokeredMessageBodyConverter> bodyConverterProviders)
+        public BodyConverterFactory(IEnumerable<IBrokeredMessageBodyConverter> bodyConverterProviders, JsonSerializerOptions jsonOptions = null)
         {
+            _jsonOptions = jsonOptions;
             InitProviderLookup(bodyConverterProviders);
         }
 
@@ -29,7 +32,7 @@ namespace Chatter.MessageBrokers
         {
             if (!(_bodyConverterProviders.TryGetValue(contentType, out var converter)))
             {
-                return new JsonBodyConverter();
+                return new JsonBodyConverter(_jsonOptions);
             }
 
             return converter;

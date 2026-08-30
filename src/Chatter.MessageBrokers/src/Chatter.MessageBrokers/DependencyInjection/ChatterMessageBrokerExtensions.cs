@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -159,6 +160,21 @@ namespace Microsoft.Extensions.DependencyInjection
             builder.Services.AddScoped<IBrokeredMessageBodyConverter, TextPlainBodyConverter>();
             builder.Services.AddScoped<IBrokeredMessageBodyConverter, JsonBodyConverter>();
 
+            return builder;
+        }
+
+        /// <summary>
+        /// Registers a <see cref="JsonSerializerOptions"/>, combining <paramref name="consumerJsonContext"/>
+        /// with Chatter's own envelope-type context, that <see cref="JsonBodyConverter"/> uses instead of
+        /// <see cref="ChatterJson.Options"/>' reflection-based default. AOT/trim-safe; does not change any
+        /// other registration made by <see cref="AddMessageBrokers(IChatterBuilder, Type[])"/>.
+        /// </summary>
+        /// <param name="builder">A <see cref="IChatterBuilder"/> used for registration and setup</param>
+        /// <param name="consumerJsonContext">A source-generated <see cref="JsonSerializerContext"/> covering the consumer's own message payload types.</param>
+        /// <returns>An <see cref="IChatterBuilder"/> used to configure Chatter capabilities</returns>
+        public static IChatterBuilder WithAotJsonSerialization(this IChatterBuilder builder, JsonSerializerContext consumerJsonContext)
+        {
+            builder.Services.AddIfNotRegistered(ServiceLifetime.Singleton, _ => ChatterJson.CreateAotOptions(consumerJsonContext));
             return builder;
         }
 
