@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Scrutor;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 
@@ -130,7 +131,7 @@ namespace Chatter.CQRS.DependencyInjection
             return services;
         }
 
-        public static IServiceCollection Replace<TService, TImplementation>(this IServiceCollection services, ServiceLifetime lifetime)
+        public static IServiceCollection Replace<TService, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(this IServiceCollection services, ServiceLifetime lifetime)
             where TService : class
             where TImplementation : class, TService
         {
@@ -157,7 +158,7 @@ namespace Chatter.CQRS.DependencyInjection
             return services;
         }
 
-        public static IServiceCollection AddIfNotRegistered<TService, TImplementation>(this IServiceCollection services, ServiceLifetime lifetime)
+        public static IServiceCollection AddIfNotRegistered<TService, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(this IServiceCollection services, ServiceLifetime lifetime)
             where TService : class
             where TImplementation : class, TService
         {
@@ -186,7 +187,7 @@ namespace Chatter.CQRS.DependencyInjection
             return services;
         }
 
-        public static IServiceCollection AddIfNotRegistered<TService>(this IServiceCollection services, ServiceLifetime lifetime)
+        public static IServiceCollection AddIfNotRegistered<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TService>(this IServiceCollection services, ServiceLifetime lifetime)
             where TService : class
             => services.AddIfNotRegistered<TService, TService>(lifetime);
     }

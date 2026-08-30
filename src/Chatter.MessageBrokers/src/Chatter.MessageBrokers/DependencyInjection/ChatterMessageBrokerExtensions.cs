@@ -16,6 +16,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 
@@ -37,6 +38,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="builder">A <see cref="IChatterBuilder"/> used for registration and setup</param>
         /// <param name="markerTypesForRequiredAssemblies">Marker types whose parent assemblies will be used to find <see cref="IBrokeredMessageReceiver{TMessage}"/> for registration.</param>
         /// <returns>An <see cref="IChatterBuilder"/> used to configure Chatter capabilities</returns>
+        [RequiresUnreferencedCode("Scans assemblies via reflection to find and register receivers for BrokeredMessageAttribute-decorated types. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
+        [RequiresDynamicCode("Scans assemblies via reflection to find and register receivers for BrokeredMessageAttribute-decorated types. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
         public static IChatterBuilder AddMessageBrokers(this IChatterBuilder builder, params Type[] markerTypesForRequiredAssemblies)
             => AddMessageBrokers(builder, null, markerTypesForRequiredAssemblies);
 
@@ -47,6 +50,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageBrokerOptionsBuilder">A delegate that uses a <see cref="MessageBrokerOptionsBuilder"/> to construct <see cref="MessageBrokerOptions"/></param>
         /// <param name="markerTypesForRequiredAssemblies">Marker types whose parent assemblies will be used to find <see cref="IBrokeredMessageReceiver{TMessage}"/> for registration. Will override any assemblies located via <see cref="AssemblySourceFilter"/> created during Chatter cqrs configuration.</param>
         /// <returns>An <see cref="IChatterBuilder"/> used to configure Chatter capabilities</returns>
+        [RequiresUnreferencedCode("Scans assemblies via reflection to find and register receivers for BrokeredMessageAttribute-decorated types. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
+        [RequiresDynamicCode("Scans assemblies via reflection to find and register receivers for BrokeredMessageAttribute-decorated types. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
         public static IChatterBuilder AddMessageBrokers(this IChatterBuilder builder, Action<MessageBrokerOptionsBuilder> messageBrokerOptionsBuilder = null, params Type[] markerTypesForRequiredAssemblies)
             => AddMessageBrokers(builder, messageBrokerOptionsBuilder, b => b.WithMarkerTypes(markerTypesForRequiredAssemblies));
 
@@ -57,6 +62,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageBrokerOptionsBuilder">A delegate that uses a <see cref="MessageBrokerOptionsBuilder"/> to construct <see cref="MessageBrokerOptions"/></param>
         /// <param name="receiverAssemblies">Assemblies that will be used to find <see cref="IBrokeredMessageReceiver{TMessage}"/> for registration. Will override any assemblies located via <see cref="AssemblySourceFilter"/> created during Chatter cqrs configuration.</param>
         /// <returns>An <see cref="IChatterBuilder"/> used to configure Chatter capabilities</returns>
+        [RequiresUnreferencedCode("Scans assemblies via reflection to find and register receivers for BrokeredMessageAttribute-decorated types. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
+        [RequiresDynamicCode("Scans assemblies via reflection to find and register receivers for BrokeredMessageAttribute-decorated types. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
         public static IChatterBuilder AddMessageBrokers(this IChatterBuilder builder, Action<MessageBrokerOptionsBuilder> messageBrokerOptionsBuilder = null, params Assembly[] receiverAssemblies)
             => AddMessageBrokers(builder, messageBrokerOptionsBuilder, b => b.WithExplicitAssemblies(receiverAssemblies));
 
@@ -67,6 +74,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="receiverNamespaceSelector">A namespace selector used to find assemblies containing types with matching namespaces or assemblies with matching FullName. Supports '*' and '?' wildcard values. Matching assemblies used to find <see cref="IBrokeredMessageReceiver{TMessage}"/> for registration. Will override any assemblies located via <see cref="AssemblySourceFilter"/> created during Chatter cqrs configuration.</param>
         /// <param name="messageBrokerOptionsBuilder">A delegate that uses a <see cref="MessageBrokerOptionsBuilder"/> to construct <see cref="MessageBrokerOptions"/></param>
         /// <returns>An <see cref="IChatterBuilder"/> used to configure Chatter capabilities</returns>
+        [RequiresUnreferencedCode("Scans assemblies via reflection to find and register receivers for BrokeredMessageAttribute-decorated types. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
+        [RequiresDynamicCode("Scans assemblies via reflection to find and register receivers for BrokeredMessageAttribute-decorated types. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
         public static IChatterBuilder AddMessageBrokers(this IChatterBuilder builder, string receiverNamespaceSelector, Action<MessageBrokerOptionsBuilder> messageBrokerOptionsBuilder = null)
             => AddMessageBrokers(builder, messageBrokerOptionsBuilder, b => b.WithNamespaceSelector(receiverNamespaceSelector));
 
@@ -77,6 +86,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="receiverHandlerSourceBuilder">An optional builder used to define an <see cref="AssemblySourceFilter"/>. Assemblies will be used to find <see cref="IBrokeredMessageReceiver{TMessage}"/> for registration. Will override any assemblies located via <see cref="AssemblySourceFilter"/> created during Chatter cqrs configuration.</param>
         /// <param name="optionsBuilder">A delegate that uses a <see cref="MessageBrokerOptionsBuilder"/> to construct <see cref="MessageBrokerOptions"/></param>
         /// <returns>An <see cref="IChatterBuilder"/> used to configure Chatter capabilities</returns>
+        [RequiresUnreferencedCode("Scans assemblies via reflection to find and register receivers for BrokeredMessageAttribute-decorated types. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
+        [RequiresDynamicCode("Scans assemblies via reflection to find and register receivers for BrokeredMessageAttribute-decorated types. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
         public static IChatterBuilder AddMessageBrokers(this IChatterBuilder builder, Action<MessageBrokerOptionsBuilder> optionsBuilder = null, Action<AssemblySourceFilterBuilder> receiverHandlerSourceBuilder = null)
         {
             var filter = builder.AssemblySourceFilter;
@@ -179,6 +190,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Finds all class in all assemblies within the current app domain that are decorated with <see cref="BrokeredMessageAttribute"/> and have a non-null <see cref="BrokeredMessageAttribute.ReceiverName"/>.
         /// </summary>
         /// <returns>A read only list of classes that are decorated with <see cref="BrokeredMessageAttribute"/> and implement <see cref="IMessage"/>.</returns>
+        [RequiresUnreferencedCode("Scans assemblies for types decorated with BrokeredMessageAttribute.")]
         private static IReadOnlyList<Type> FindBrokeredMessagesWithReceiversInAssembliesByType(IEnumerable<Assembly> assemblies)
             => assemblies.SelectMany(assemblies => assemblies.GetTypes()
                          .Where(type => type.GetInterfaces()
@@ -207,6 +219,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <param name="builder">The singleton <see cref="ChatterBuilder"/> instance used for registration.</param>
         /// <returns>The singleton <see cref="IChatterBuilder"/> instance.</returns>
+        [RequiresUnreferencedCode("Scans assemblies for BrokeredMessageAttribute-decorated types and registers their receivers via reflection. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
+        [RequiresDynamicCode("Scans assemblies for BrokeredMessageAttribute-decorated types and registers their receivers via reflection. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
         private static IChatterBuilder AddAllReceivers(this IChatterBuilder builder, IEnumerable<Assembly> assemblies)
         {
             var messages = FindBrokeredMessagesWithReceiversInAssembliesByType(assemblies);
@@ -252,6 +266,8 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
+        [RequiresUnreferencedCode("Registers the receiver's implementation types via reflection. Use the AddReceiver<TMessage> overload for an AOT-safe, closed-generic alternative.")]
+        [RequiresDynamicCode("Registers the receiver's implementation types via reflection. Use the AddReceiver<TMessage> overload for an AOT-safe, closed-generic alternative.")]
         private static void AddReceiverImpl(this IServiceCollection services, ReceiverOptions options, Type closedBrokeredMessageReceiverInterface, Type closedConcreteBrokeredMessageReceiver, Type closedConcreteReceiverBackgroundService)
         {
             // Retain the LIVE options instance — the SAME one captured into the hosted-service closure below —
@@ -287,6 +303,8 @@ namespace Microsoft.Extensions.DependencyInjection
             return registry;
         }
 
+        [RequiresUnreferencedCode("Resolves the receiver's implementation types via reflection. Use the AddReceiver<TMessage> overload for an AOT-safe, closed-generic alternative.")]
+        [RequiresDynamicCode("Resolves the receiver's implementation types via MakeGenericType. Use the AddReceiver<TMessage> overload for an AOT-safe, closed-generic alternative.")]
         private static void AddReceiverImpl(this IServiceCollection services, Type messageTypeToReceive, ReceiverOptions options)
         {
             var closedBrokeredMessageReceiverInterface = typeof(IBrokeredMessageReceiver<>).MakeGenericType(messageTypeToReceive);
@@ -295,15 +313,22 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddReceiverImpl(options, closedBrokeredMessageReceiverInterface, closedConcreteBrokeredMessageReceiver, closedConcreteReceiverBackgroundService);
         }
 
+        // AOT-safe: registers the closed-generic types directly (no MakeGenericType/Activator.CreateInstance),
+        // unlike the shared Type-based AddReceiverImpl core this deliberately does not call into.
         private static void AddReceiverImpl<TMessage>(this IServiceCollection services, ReceiverOptions options)
             where TMessage : class, IMessage
         {
-            var closedBrokeredMessageReceiverInterface = typeof(IBrokeredMessageReceiver<TMessage>);
-            var closedConcreteBrokeredMessageReceiver = typeof(BrokeredMessageReceiver<TMessage>);
-            var closedConcreteReceiverBackgroundService = typeof(BrokeredMessageReceiverBackgroundService<TMessage>);
-            services.AddReceiverImpl(options, closedBrokeredMessageReceiverInterface, closedConcreteBrokeredMessageReceiver, closedConcreteReceiverBackgroundService);
+            GetOrAddDiscoveredReceiverRegistry(services).Register(options);
+
+            services.AddScoped<IBrokeredMessageReceiver<TMessage>, BrokeredMessageReceiver<TMessage>>();
+            services.AddSingleton<IHostedService>(sp =>
+            {
+                using var scope = sp.CreateScope();
+                return new BrokeredMessageReceiverBackgroundService<TMessage>(options, scope.ServiceProvider);
+            });
         }
 
+        [RequiresUnreferencedCode("Calls Type.GetInterfaces() on types discovered via assembly scan.")]
         private static IEnumerable<(ReceiverOptions, Type)> GetAllReceiverTypes(IReadOnlyList<Type> messages)
         {
             foreach (var messageType in messages)
