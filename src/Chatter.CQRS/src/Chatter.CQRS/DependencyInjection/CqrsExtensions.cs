@@ -39,6 +39,11 @@ namespace Microsoft.Extensions.DependencyInjection
             chatterBuilder.Services.AddMessageHandlers(assemblies);
             chatterBuilder.Services.AddQueryHandlers(assemblies);
 
+            return AddCoreCqrsServices(chatterBuilder, pipelineBuilder);
+        }
+
+        internal static IChatterBuilder AddCoreCqrsServices(this IChatterBuilder chatterBuilder, Action<CommandPipelineBuilder> pipelineBuilder)
+        {
             chatterBuilder.Services.AddScoped<IMessageDispatcherProvider, MessageDispatcherProvider>();
 
             chatterBuilder.Services.AddInMemoryMessageDispatchers();

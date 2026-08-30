@@ -32,14 +32,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             var chatterBuilder = ChatterBuilder.Create(services, configuration, AssemblySourceFilterBuilder.New().Build());
 
-            chatterBuilder.Services.AddScoped<IMessageDispatcherProvider, MessageDispatcherProvider>();
-
-            chatterBuilder.Services.AddInMemoryMessageDispatchers();
-            chatterBuilder.Services.AddInMemoryQueryDispatcher();
-
-            chatterBuilder.Services.AddIfNotRegistered<IExternalDispatcher, NoOpExternalDispatcher>(ServiceLifetime.Scoped);
-
-            return CqrsExtensions.AddCommandPipeline(chatterBuilder, pipelineBuilder);
+            return CqrsExtensions.AddCoreCqrsServices(chatterBuilder, pipelineBuilder);
         }
 
         /// <summary>
