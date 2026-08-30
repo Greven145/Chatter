@@ -36,12 +36,13 @@ namespace Chatter.SqlChangeFeed.DependencyInjection
                                                        string tableName,
                                                        Action<SqlChangeFeedOptionsBuilder> optionsBuilder = null)
         {
-            typeof(SqlChangeFeedExtensions).GetMethods()
-                             .Where(m => m.IsGenericMethod
+            var genericMethod = typeof(SqlChangeFeedExtensions).GetMethods()
+                             .FirstOrDefault(m => m.IsGenericMethod
                                          && m.Name == nameof(AddSqlChangeFeed))
-                             .FirstOrDefault()
-                             .MakeGenericMethod(rowChangedDataType)
-                             .Invoke(null, new object[] { builder, connectionString, databaseName, tableName, optionsBuilder });
+                ?? throw new InvalidOperationException($"No generic {nameof(AddSqlChangeFeed)}<TRowChangedData> method was found on {nameof(SqlChangeFeedExtensions)}.");
+
+            genericMethod.MakeGenericMethod(rowChangedDataType)
+                         .Invoke(null, new object[] { builder, connectionString, databaseName, tableName, optionsBuilder });
 
             return builder;
         }
