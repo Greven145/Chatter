@@ -200,6 +200,30 @@ namespace Chatter.MessageBrokers.Tests.DependencyInjection.UsingChatterMessageBr
         }
 
         [Fact]
+        public void MustRegisterTwoIndependentReceiversWhenAddReceiverIsCalledTwiceForTheSameMessageType()
+        {
+            // Documents pre-existing, unchanged behavior: AddReceiver<TMessage> has no duplicate-registration
+            // guard, on this call or the reflective scan route it shares a registry with. Calling it twice for
+            // the same TMessage yields two independent hosted services, not a replace or a throw.
+            using var infraReceiver = NoMessages();
+            using var provider = BuildProvider(
+                infraReceiver,
+                optionsConfigurator: b =>
+                {
+                    b.AddReceiver<TestReceiverMessage>(receiverPath: "test-queue-1", infrastructureType: InfrastructureType);
+                    b.AddReceiver<TestReceiverMessage>(receiverPath: "test-queue-2", infrastructureType: InfrastructureType);
+                });
+
+            provider.GetServices<IHostedService>()
+                    .OfType<BrokeredMessageReceiverBackgroundService<TestReceiverMessage>>()
+                    .Should().HaveCount(2);
+
+            var registry = provider.GetRequiredService<IDiscoveredReceiverRegistry>();
+            registry.DiscoveredReceivers.Select(r => r.MessageReceiverPath)
+                    .Should().BeEquivalentTo(new[] { "test-queue-1", "test-queue-2" });
+        }
+
+        [Fact]
         public void MustDiscoverNoReceiversWhenNoneAreAdded()
         {
             using var infraReceiver = NoMessages();

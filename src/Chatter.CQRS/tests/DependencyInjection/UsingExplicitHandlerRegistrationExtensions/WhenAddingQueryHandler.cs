@@ -3,6 +3,7 @@ using Chatter.CQRS.Queries;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -30,6 +31,21 @@ namespace Chatter.CQRS.Tests.DependencyInjection.UsingExplicitHandlerRegistratio
 
             FluentActions.Invoking(() => sc.AddQueryHandler<FakeQuery, string, FakeQueryHandler2>())
                 .Should().Throw<InvalidOperationException>();
+
+            sc.Should().HaveCount(1);
+            sc.Single().ImplementationType.Should().Be(typeof(FakeQueryHandler));
+        }
+
+        [Fact]
+        public void MustRegisterIndependentlyForDifferentResultTypes()
+        {
+            var sc = new ServiceCollection();
+            sc.AddQueryHandler<FakeMultiResultQuery, string, FakeStringResultHandler>();
+            sc.AddQueryHandler<FakeMultiResultQuery, int, FakeIntResultHandler>();
+
+            sc.Should().HaveCount(2);
+            sc.Should().Contain(sd => sd.ServiceType == typeof(IQueryHandler<FakeMultiResultQuery, string>) && sd.ImplementationType == typeof(FakeStringResultHandler));
+            sc.Should().Contain(sd => sd.ServiceType == typeof(IQueryHandler<FakeMultiResultQuery, int>) && sd.ImplementationType == typeof(FakeIntResultHandler));
         }
 
         [Fact]
@@ -49,6 +65,18 @@ namespace Chatter.CQRS.Tests.DependencyInjection.UsingExplicitHandlerRegistratio
         private class FakeQueryHandler2 : IQueryHandler<FakeQuery, string>
         {
             public Task<string> Handle(FakeQuery query, IQueryHandlerContext context) => throw new NotImplementedException();
+        }
+
+        private class FakeMultiResultQuery : IQuery<string>, IQuery<int> { }
+
+        private class FakeStringResultHandler : IQueryHandler<FakeMultiResultQuery, string>
+        {
+            public Task<string> Handle(FakeMultiResultQuery query, IQueryHandlerContext context) => throw new NotImplementedException();
+        }
+
+        private class FakeIntResultHandler : IQueryHandler<FakeMultiResultQuery, int>
+        {
+            public Task<int> Handle(FakeMultiResultQuery query, IQueryHandlerContext context) => throw new NotImplementedException();
         }
     }
 }
