@@ -167,7 +167,7 @@ jobs:
           python3 .github/scripts/summarize_aot_smoke.py \
             artifacts/aot-smoke/results.trx \
             artifacts/aot-smoke/known-gap-tests.json \
-            >> "$GITHUB_STEP_SUMMARY" || true
+            >> "$GITHUB_STEP_SUMMARY"
       - name: Upload AOT smoke results
         if: always()
         uses: actions/upload-artifact@v4
