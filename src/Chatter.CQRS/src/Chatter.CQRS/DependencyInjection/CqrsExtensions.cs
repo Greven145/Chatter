@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Scrutor;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Microsoft.Extensions.DependencyInjection
@@ -25,6 +26,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="pipelineBuilder">An optional builder used to define an <see cref="ICommandBehaviorPipeline{TMessage}"/></param>
         /// <param name="messageHandlerSourceBuilder">An optional builder used to define a <see cref="AssemblySourceFilter"/>. Assemblies will be used to find <see cref="IMessageHandler{TMessage}"/> for registration.</param>
         /// <returns>An <see cref="IChatterBuilder"/> used to configure Chatter capabilities</returns>
+        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> and IQueryHandler<,> implementations. Use AddChatterCqrsWithExplicitHandlers with AddCommandHandler/AddEventHandler/AddQueryHandler for an AOT-safe, explicit alternative.")]
         public static IChatterBuilder AddChatterCqrs(this IServiceCollection services, IConfiguration configuration, Action<CommandPipelineBuilder> pipelineBuilder = null, Action<AssemblySourceFilterBuilder> messageHandlerSourceBuilder = null)
         {
             var filterBuilder = AssemblySourceFilterBuilder.New();
@@ -55,6 +57,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="pipelineBuilder">An optional builder used to define an <see cref="ICommandBehaviorPipeline{TMessage}"/></param>
         /// <param name="markerTypesForRequiredAssemblies">Marker types whose parent assemblies will be used to find <see cref="IMessageHandler{TMessage}"/> for registration.</param>
         /// <returns>An <see cref="IChatterBuilder"/> used to configure Chatter capabilities</returns>
+        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> and IQueryHandler<,> implementations. Use AddChatterCqrsWithExplicitHandlers with AddCommandHandler/AddEventHandler/AddQueryHandler for an AOT-safe, explicit alternative.")]
         public static IChatterBuilder AddChatterCqrs(this IServiceCollection services, IConfiguration configuration, Action<CommandPipelineBuilder> pipelineBuilder = null, params Type[] markerTypesForRequiredAssemblies)
             => services.AddChatterCqrs(configuration, pipelineBuilder, b => b.WithMarkerTypes(markerTypesForRequiredAssemblies));
 
@@ -65,6 +68,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configuration">The <see cref="IConfiguration"/> used for configuration based settings</param>
         /// <param name="markerTypesForRequiredAssemblies">Marker types whose parent assemblies will be used to find <see cref="IMessageHandler{TMessage}"/> for registration.</param>
         /// <returns>An <see cref="IChatterBuilder"/> used to configure Chatter capabilities</returns>
+        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> and IQueryHandler<,> implementations. Use AddChatterCqrsWithExplicitHandlers with AddCommandHandler/AddEventHandler/AddQueryHandler for an AOT-safe, explicit alternative.")]
         public static IChatterBuilder AddChatterCqrs(this IServiceCollection services, IConfiguration configuration, params Type[] markerTypesForRequiredAssemblies)
             => services.AddChatterCqrs(configuration, null, b => b.WithMarkerTypes(markerTypesForRequiredAssemblies));
 
@@ -75,6 +79,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configuration">The <see cref="IConfiguration"/> used for configuration based settings</param>
         /// <param name="handlerAssemblies">Assemblies will be used to find <see cref="IMessageHandler{TMessage}"/> for registration.</param>
         /// <returns>An <see cref="IChatterBuilder"/> used to configure Chatter capabilities</returns>
+        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> and IQueryHandler<,> implementations. Use AddChatterCqrsWithExplicitHandlers with AddCommandHandler/AddEventHandler/AddQueryHandler for an AOT-safe, explicit alternative.")]
         public static IChatterBuilder AddChatterCqrs(this IServiceCollection services, IConfiguration configuration, params Assembly[] handlerAssemblies)
             => services.AddChatterCqrs(configuration, null, b => b.WithExplicitAssemblies(handlerAssemblies));
 
@@ -85,6 +90,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configuration">The <see cref="IConfiguration"/> used for configuration based settings</param>
         /// <param name="handlerNamespaceSelector">A namespace selector used to find assemblies containing types with matching namespaces or assemblies with matching FullName. Supports '*' and '?' wildcard values. Matching assemblies used to find <see cref="IMessageHandler{TMessage}"/> for registration.</param>
         /// <returns>An <see cref="IChatterBuilder"/> used to configure Chatter capabilities</returns>
+        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> and IQueryHandler<,> implementations. Use AddChatterCqrsWithExplicitHandlers with AddCommandHandler/AddEventHandler/AddQueryHandler for an AOT-safe, explicit alternative.")]
         public static IChatterBuilder AddChatterCqrs(this IServiceCollection services, IConfiguration configuration, string handlerNamespaceSelector)
             => services.AddChatterCqrs(configuration, null, b => b.WithNamespaceSelector(handlerNamespaceSelector));
 
@@ -99,6 +105,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return chatterBuilder;
         }
 
+        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> implementations.")]
         internal static IServiceCollection AddMessageHandlers(this IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
             AddCommandHandlers(services, assemblies);
@@ -106,6 +113,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
+        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> implementations.")]
         internal static IServiceCollection AddEventHandlers(this IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
             services.Scan(s =>
@@ -118,6 +126,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
+        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> implementations.")]
         internal static IServiceCollection AddCommandHandlers(this IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
             services.Scan(s =>
@@ -134,6 +143,7 @@ namespace Microsoft.Extensions.DependencyInjection
             => (!type.IsGenericType || type.IsGenericTypeWithNonGenericTypeParameters())
                 && type.IsImplementingOpenGenericTypeWithMatchingTypeParameter(typeof(IMessageHandler<>), genericParameterMatchType);
 
+        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IQueryHandler<,> implementations.")]
         internal static IServiceCollection AddQueryHandlers(this IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
             services.Scan(s =>
