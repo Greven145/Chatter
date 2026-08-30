@@ -8,11 +8,10 @@ public enum PingStatus
     Closed = 1,
 }
 
-// Deliberately its own enum, not PingStatus: PingStatus is NumericWriteStringReadEnumConverterTests'
-// dedicated KnownGap fixture for ChatterJson.Options' reflection path. Native AOT's codegen
-// preservation is whole-program (same finding as Phase 2's constructor-preservation surprise) —
-// covering PingStatus here too would make ILC generate real code for it, flipping that other test
-// green for the wrong reason instead of the gap it's meant to demonstrate actually closing.
+// Deliberately a separate enum from PingStatus (NumericWriteStringReadEnumConverterTests' KnownGap
+// fixture for the reflection path). Native AOT constructor/type preservation is whole-program, not
+// per-use-site: referencing PingStatus here would give ILC a reason to generate real code for it
+// everywhere, silently flipping that other test green without the gap it exercises actually closing.
 public enum PingResultStatus
 {
     Open = 0,
