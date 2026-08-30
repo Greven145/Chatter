@@ -16,6 +16,7 @@ Solution is `Chatter.sln`; tests live under `src/<Module>/tests/*.Tests.csproj` 
 
 - `src/` — 9 independently-versioned NuGet package modules, each with its own `src/` and `tests/` subtree.
 - `tests/` — shared test core (`Chatter.Testing.Core.csproj`) referenced by all module test projects.
+- `Chatter.Aot.Smoke.Tests/` — net10.0-only Native AOT smoke-test project for the AOT/trim compatibility initiative (tracking issue [#275](https://github.com/brenpike/Chatter/issues/275)); validated by publishing (`dotnet publish -r linux-x64`) and executing the resulting native binary directly, not `dotnet test`. Deliberately does not reference `Chatter.Testing.Core` (Moq/Castle DynamicProxy is AOT-incompatible) — hand-rolled fakes live under its own `Fakes/`. Lives at top level, not under `tests/`, because `Chatter.Testing.Core.csproj`'s default glob include would otherwise sweep up its generated `obj/` output.
 - `.github/workflows/` — GitHub Actions CI/CD: one `<module>-cicd.yml` per module plus shared/reusable workflows (version checks, tagging, CodeQL, top-level CI, scheduled integration runs).
 - `CONTEXT-MAP.md` — entry point to bounded-context docs; lists all 9 contexts, their paths, and relationships.
 

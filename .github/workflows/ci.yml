@@ -3,16 +3,20 @@ name: CI
 on:
   workflow_dispatch:
   pull_request:
-    branches: [master]
+    branches: [master, aotIntegration]
     paths:
       - 'src/**'
       - 'tests/**'
+      - 'Chatter.Aot.Smoke.Tests/**'
+      - '.github/scripts/summarize_aot_smoke.py'
       - '.github/workflows/ci.yml'
   push:
-    branches: [master]
+    branches: [master, aotIntegration]
     paths:
       - 'src/**'
       - 'tests/**'
+      - 'Chatter.Aot.Smoke.Tests/**'
+      - '.github/scripts/summarize_aot_smoke.py'
       - '.github/workflows/ci.yml'
 
 permissions:
@@ -124,7 +128,64 @@ jobs:
       - name: Build
         run: dotnet build Chatter.sln -c Release --no-restore
       - name: Integration test (all adapters)
-        run: dotnet test Chatter.sln -c Release --no-build --filter 'Category=Integration'
+        run: |
+          for p in \
+            'src/Chatter.CQRS/tests/Chatter.CQRS.Tests.csproj' \
+            'src/Chatter.MessageBrokers/tests/Chatter.MessageBrokers.Tests.csproj' \
+            'src/Chatter.MessageBrokers.AzureServiceBus/tests/Chatter.MessageBrokers.AzureServiceBus.Tests.csproj' \
+            'src/Chatter.MessageBrokers.AzureServiceBus.Auth/tests/Chatter.MessageBrokers.AzureServiceBus.Auth.Tests.csproj' \
+            'src/Chatter.MessageBrokers.Reliability.EntityFramework/tests/Chatter.MessageBrokers.Reliability.EntityFramework.Tests.csproj' \
+            'src/Chatter.MessageBrokers.SqlServiceBroker/tests/Chatter.MessageBrokers.SqlServiceBroker.Tests.csproj' \
+            'src/Chatter.MessageBrokers.RabbitMQ/tests/Chatter.MessageBrokers.RabbitMQ.Tests.csproj' \
+            'src/Chatter.MessageBrokers.Reliability.Cosmos/tests/Chatter.MessageBrokers.Reliability.Cosmos.Tests.csproj' \
+            'src/Chatter.SqlChangeFeed/tests/Chatter.SqlChangeFeed.Tests.csproj'; do
+            dotnet test "$p" -c Release --no-build --filter 'Category=Integration'
+          done
+
+  aot-smoke:
+    name: aot smoke (native AOT, net10.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: |
+            Chatter.Aot.Smoke.Tests/packages.lock.json
+      - name: Install Native AOT prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zlib1g-dev
+      - name: Restore
+        run: dotnet restore Chatter.Aot.Smoke.Tests/Chatter.Aot.Smoke.Tests.csproj --locked-mode
+      - name: Publish (Native AOT)
+        run: dotnet publish Chatter.Aot.Smoke.Tests/Chatter.Aot.Smoke.Tests.csproj -c Release -r linux-x64 --no-restore
+      - name: Run required (untagged) AOT smoke tests
+        run: |
+          BIN=Chatter.Aot.Smoke.Tests/bin/Release/net10.0/linux-x64/publish/Chatter.Aot.Smoke.Tests
+          "$BIN" -noColor -trait- "AotStatus=KnownGap"
+      - name: Run full AOT smoke report (including known gaps; never blocks)
+        if: always()
+        run: |
+          mkdir -p artifacts/aot-smoke
+          BIN=Chatter.Aot.Smoke.Tests/bin/Release/net10.0/linux-x64/publish/Chatter.Aot.Smoke.Tests
+          "$BIN" -noColor -list tests/json -trait "AotStatus=KnownGap" > artifacts/aot-smoke/known-gap-tests.json
+          "$BIN" -noColor -ignoreFailures -result-trx artifacts/aot-smoke/results.trx
+      - name: Publish AOT smoke job summary
+        if: always()
+        run: |
+          python3 .github/scripts/summarize_aot_smoke.py \
+            artifacts/aot-smoke/results.trx \
+            artifacts/aot-smoke/known-gap-tests.json \
+            >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload AOT smoke results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aot-smoke-results
+          path: artifacts/aot-smoke/**
 
   real-namespace-integration:
     name: integration (azureservicebus real namespace)
