@@ -33,8 +33,10 @@ namespace Chatter.CQRS.Queries
             try
             {
                 var handlerType = typeof(IQueryHandler<,>).MakeGenericType(query.GetType(), typeof(TResult));
-                dynamic handler = _serviceProvider.GetRequiredService(handlerType);
-                return await handler.Handle((dynamic)query, queryHandlerContext);
+                var handler = _serviceProvider.GetRequiredService(handlerType);
+                var handleMethod = handlerType.GetMethod("Handle");
+                var task = (Task<TResult>)handleMethod.Invoke(handler, new object[] { query, queryHandlerContext });
+                return await task;
             }
             catch (Exception e)
             {

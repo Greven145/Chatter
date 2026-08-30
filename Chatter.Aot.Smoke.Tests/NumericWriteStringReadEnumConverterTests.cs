@@ -8,11 +8,11 @@ public class NumericWriteStringReadEnumConverterTests
 {
     [Fact]
     [Trait("AotStatus", "KnownGap")]
-    public void EnumConverter_UnderNativeAot_ThrowsMissingNativeCodeOrMetadata()
+    public void EnumConverter_UnderNativeAot_ThrowsFromJsonTypeInfoResolverNotConverter()
     {
         var ex = Assert.Throws<NotSupportedException>(
             () => JsonSerializer.Deserialize<PingStatus>("\"Closed\"", ChatterJson.Options));
 
-        Assert.Contains("missing native code or metadata", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("no code was generated for it", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }

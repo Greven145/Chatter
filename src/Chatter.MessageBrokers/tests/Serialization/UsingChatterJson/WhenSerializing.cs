@@ -30,6 +30,25 @@ namespace Chatter.MessageBrokers.Tests.Serialization.UsingChatterJson
             public BookingStatus Status { get; set; }
         }
 
+        private enum FlagPermissions : ulong
+        {
+            None = 0,
+            Read = 1,
+            Write = 2,
+            Admin = ulong.MaxValue,
+        }
+
+        private class UlongEnumPoco
+        {
+            public FlagPermissions Permissions { get; set; }
+        }
+
+        private class MultiEnumPoco
+        {
+            public BookingStatus Status { get; set; }
+            public FlagPermissions Permissions { get; set; }
+        }
+
         [Fact]
         public void MustExposeNonNullCachedOptions()
         {
@@ -176,6 +195,40 @@ namespace Chatter.MessageBrokers.Tests.Serialization.UsingChatterJson
             var act = () => JsonSerializer.Deserialize<EnumPoco>("{\"Status\":\"NotARealStatus\"}", ChatterJson.Options);
 
             act.Should().Throw<JsonException>();
+        }
+
+        // ulong-backed enums route through the converter's UnderlyingType == typeof(ulong) branch on
+        // both Read and Write — the int-backed BookingStatus tests above never exercise it.
+        [Fact]
+        public void MustRoundTripUlongBackedEnumAtMaxValue()
+        {
+            var json = JsonSerializer.Serialize(new UlongEnumPoco { Permissions = FlagPermissions.Admin }, ChatterJson.Options);
+            json.Should().Be($"{{\"Permissions\":{ulong.MaxValue}}}");
+
+            var deserialized = JsonSerializer.Deserialize<UlongEnumPoco>(json, ChatterJson.Options);
+            deserialized.Permissions.Should().Be(FlagPermissions.Admin);
+        }
+
+        [Fact]
+        public void MustReadUlongBackedEnumPropertyFromStringName()
+        {
+            var deserialized = JsonSerializer.Deserialize<UlongEnumPoco>("{\"Permissions\":\"Write\"}", ChatterJson.Options);
+
+            deserialized.Permissions.Should().Be(FlagPermissions.Write);
+        }
+
+        // The converter factory must independently build/select a converter per enum type within one
+        // JsonSerializerOptions instance — not cache or collide across types.
+        [Fact]
+        public void MustRoundTripMultipleEnumTypesWithinOneOptionsInstance()
+        {
+            var original = new MultiEnumPoco { Status = BookingStatus.Cancelled, Permissions = FlagPermissions.Admin };
+
+            var json = JsonSerializer.Serialize(original, ChatterJson.Options);
+            var roundTripped = JsonSerializer.Deserialize<MultiEnumPoco>(json, ChatterJson.Options);
+
+            roundTripped.Status.Should().Be(BookingStatus.Cancelled);
+            roundTripped.Permissions.Should().Be(FlagPermissions.Admin);
         }
     }
 }
