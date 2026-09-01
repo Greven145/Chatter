@@ -12,6 +12,8 @@ namespace Chatter.CQRS.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
+        [RequiresUnreferencedCode("Reflects over behaviorType's implemented interfaces and, for an open generic behavior, scans its assembly via Scrutor to find and register implementations.")]
+        [RequiresDynamicCode("For a closed generic behavior type, resolves the closed ICommandBehavior<> interface via Type.MakeGenericType.")]
         public static IServiceCollection AddPipelineBehavior(this IServiceCollection services, Type behaviorType)
         {
             _ = behaviorType ?? throw new ArgumentNullException(nameof(behaviorType), "Cannot add null behavior type to command pipeline.");
@@ -83,6 +85,7 @@ namespace Chatter.CQRS.DependencyInjection
             return services;
         }
 
+        [RequiresUnreferencedCode("Reflects over openGenericBehaviorType's implemented interfaces and scans its assembly via Scrutor to find and register implementations.")]
         public static IServiceCollection RegisterBehaviorForAllCommands(this IServiceCollection services, Type openGenericBehaviorType)
         {
             _ = openGenericBehaviorType ?? throw new ArgumentNullException(nameof(openGenericBehaviorType), "A non-null command behavior type is required");
@@ -107,6 +110,8 @@ namespace Chatter.CQRS.DependencyInjection
             return services;
         }
 
+        [RequiresUnreferencedCode("Reflects over closedGenericBehaviorType's implemented interfaces to locate its ICommandBehavior<> closure.")]
+        [RequiresDynamicCode("Resolves the closed ICommandBehavior<> interface via Type.MakeGenericType.")]
         public static IServiceCollection RegisterBehaviorForCommand(this IServiceCollection services, Type closedGenericBehaviorType)
         {
             var commandBehaviorType = typeof(ICommandBehavior<>);

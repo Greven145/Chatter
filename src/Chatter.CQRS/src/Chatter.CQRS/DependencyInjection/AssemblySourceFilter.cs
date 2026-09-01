@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Enumeration;
 using System.Linq;
 using System.Reflection;
@@ -15,6 +16,7 @@ namespace Chatter.CQRS.DependencyInjection
         /// Returns a subset of <see cref="Assembly"/> after applying filter criteria
         /// </summary>
         /// <returns></returns>
+        [RequiresUnreferencedCode("Enumerates every type in each candidate assembly (Assembly.GetTypes) to match against a namespace selector, which trimming cannot statically analyze.")]
         IEnumerable<Assembly> Apply();
     }
 
@@ -47,9 +49,11 @@ namespace Chatter.CQRS.DependencyInjection
         /// Applies filter criteria against the <see cref="IAssemblyFilterSourceProvider"/>, returning the <see cref="Assembly"/> that match.
         /// </summary>
         /// <returns>The enumerable of assemblies that match filter criteria and any <see cref="ExplictAssemblies"/></returns>
+        [RequiresUnreferencedCode("Enumerates every type in each candidate assembly (Assembly.GetTypes) to match against NamespaceSelector, which trimming cannot statically analyze.")]
         public IEnumerable<Assembly> Apply()
             => ExplictAssemblies.Union(GetAssembliesThatMatchNamespaceSelector());
 
+        [RequiresUnreferencedCode("Enumerates every type in each candidate assembly (Assembly.GetTypes) to match against NamespaceSelector, which trimming cannot statically analyze.")]
         private IEnumerable<Assembly> GetAssembliesThatMatchNamespaceSelector()
             => AssemblySourceProvider.GetSourceAssemblies().Where(assembly => SafeGetLoadableTypes(assembly)
                 .Any(type => IsMatchingNamespaceSelector(type.Namespace)) || IsMatchingNamespaceSelector(assembly.FullName));
@@ -60,6 +64,7 @@ namespace Chatter.CQRS.DependencyInjection
         /// assembly such as DynamicProxyGenAssembly2) would otherwise cause <see cref="Assembly.GetTypes"/> to throw
         /// <see cref="ReflectionTypeLoadException"/> and abort the entire assembly-source scan.
         /// </summary>
+        [RequiresUnreferencedCode("Enumerates every type in assembly via Assembly.GetTypes, which trimming cannot statically analyze.")]
         internal static IEnumerable<Type> SafeGetLoadableTypes(Assembly assembly)
         {
             try
