@@ -185,6 +185,31 @@ var slip = RoutingSlipBuilder.NewRoutingSlip(Guid.NewGuid())
 
 `RoutingSlipBehavior` advances the slip across the configured `RoutingStep`s; helper extensions (`MessageBrokerContextExtensions`, `SendOptionsExtensions`, `CommandPipelineBuilderExtensions`) attach and read the slip on the message/context.
 
+## Native AOT
+
+Two independent reflection-based defaults have AOT-safe, opt-in alternatives:
+
+**Receiver registration.** `AddAllReceivers` scans assemblies for `[BrokeredMessage]`-decorated types. Register a receiver explicitly instead:
+
+```csharp
+services.AddReceiver<OrderPlaced>(receiverPath: "orders.queue", errorQueuePath: "orders.error");
+// or, on a MessageBrokerOptionsBuilder during AddMessageBrokers configuration:
+options.AddReceiver<OrderPlaced>(receiverPath: "orders.queue");
+```
+
+**JSON serialization.** `ChatterJson.Options` (the shared default used by `JsonBodyConverter`, the outbox, routing slips, and message-context persistence) resolves types via reflection, including a non-public-member fallback for private-setter/private-constructor DTOs. Register a source-generated alternative instead:
+
+```csharp
+[JsonSerializable(typeof(OrderPlaced))]
+internal partial class MyMessagesJsonContext : JsonSerializerContext { }
+
+chatterBuilder.WithAotJsonSerialization(MyMessagesJsonContext.Default);
+```
+
+`WithAotJsonSerialization` combines your context with Chatter's own envelope-type context and registers the result once at DI setup; `JsonBodyConverter` picks it up automatically in place of `ChatterJson.Options`. **Message DTOs used on this path need public/internal settable members or an accessible `[JsonConstructor]`** — System.Text.Json source generation cannot touch a `private` member (it throws `NotSupportedException` at runtime; generated code obeys ordinary C# accessibility rules, same as any hand-written class). This is a permanent characteristic of source generation, not a gap Chatter can close — private-member DTOs are supported in reflection mode (`ChatterJson.Options`) only.
+
+`AddAllReceivers`, `AddChatterCqrs`'s Scrutor scan, and `ChatterJson.Options` remain the unchanged defaults; nothing above changes their behavior for consumers who don't opt in.
+
 ## Domain Language
 
 Terminology used throughout this module (Brokered Message, Receiver, Dispatcher, Router/Forwarder, Inbox/Outbox, Recovery, Circuit Breaker, Critical Failure, Error Queue, Max Receives Exceeded, Body Converter) is defined in the [domain glossary](../CONTEXT.md).

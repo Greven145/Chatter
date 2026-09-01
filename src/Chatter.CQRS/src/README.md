@@ -234,6 +234,22 @@ services.AddPipelineBehavior(typeof(LoggingBehavior<>)); // open generic → all
 services.AddPipelineBehavior(typeof(ValidateCreateOrderBehavior)); // closed generic → one command
 ```
 
+## Native AOT
+
+`AddChatterCqrs` registers handlers by scanning assemblies with Scrutor — reflection-based, and unchanged as the default. For a Native AOT or fully-trimmed application, register handlers explicitly instead:
+
+```csharp
+services.AddChatterCqrsWithExplicitHandlers(configuration, pipeline => pipeline.WithBehavior(typeof(LoggingBehavior<>)));
+
+services.AddCommandHandler<CreateOrder, CreateOrderHandler>();
+services.AddEventHandler<OrderCreated, OrderCreatedHandler>();
+services.AddQueryHandler<GetOrder, OrderReadModel, GetOrderHandler>();
+```
+
+`AddChatterCqrsWithExplicitHandlers` sets up the same non-scanning services (`IMessageDispatcherProvider`, in-memory dispatchers, command pipeline) as `AddChatterCqrs`, without the assembly scan. Each `Add*Handler<...>` call registers one handler with no reflection at resolution time. The scanning API (`AddChatterCqrs`, `AddPipelineBehavior`, `RegisterBehaviorForAllCommands`) is annotated `[RequiresUnreferencedCode]`/`[RequiresDynamicCode]` so a trim/AOT-aware build flags it; the explicit API carries neither annotation.
+
+`QueryDispatcher`'s `Query<TResult>(IQuery<TResult>)` overload — dispatching through an `IQuery<TResult>` interface reference rather than a known `TQuery` — still resolves its handler via reflection (`[RequiresDynamicCode]`) even on the explicit-registration path, because only the query's runtime type is known at that call site. Prefer `Query<TQuery, TResult>(TQuery)` when the query's concrete type is known at the call site; it has no such requirement.
+
 ## Domain Language
 
 Terms such as Command, Query, Read Model, Event (Domain vs Integration), Aggregate, Command Pipeline, Message Context, and Dispatcher follow the project's ubiquitous language. See [../CONTEXT.md](../CONTEXT.md) for the full glossary and relationships.

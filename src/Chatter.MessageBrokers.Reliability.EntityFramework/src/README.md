@@ -140,6 +140,10 @@ The entity configurations map two tables (table names default to the `DbSet`/ent
 | `Destination` | `string` | Required |
 | `BatchId` | `Guid` | Required; the transaction id the message was written under |
 
+## Native AOT
+
+`IsAotCompatible` is set for this module, but EF Core's own Native AOT support is a separate, upstream constraint outside Chatter's control: as of EF Core 9/10 it is explicitly experimental, not recommended for production, requires opt-in query precompilation via C# interceptors (`Microsoft.EntityFrameworkCore.Tasks`), does not support dynamic LINQ query composition, and — per Microsoft's own documentation — "publishing currently reports a number of trimming and NativeAOT warnings" even on the supported path. This is a permanent, upstream limitation this initiative does not attempt to solve; consult [EF Core's NativeAOT documentation](https://learn.microsoft.com/ef/core/performance/nativeaot-and-precompiled-queries) before publishing an application that uses this module with `PublishAot`.
+
 ## Domain Language
 
 See [CONTEXT.md](../CONTEXT.md) for the domain glossary (Brokered Message Inbox/Outbox, Unit of Work, Persistance Transaction).
