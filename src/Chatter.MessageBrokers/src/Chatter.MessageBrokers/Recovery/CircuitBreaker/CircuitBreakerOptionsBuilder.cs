@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 
 namespace Chatter.MessageBrokers.Recovery.CircuitBreaker
@@ -115,6 +116,7 @@ namespace Chatter.MessageBrokers.Recovery.CircuitBreaker
         public CircuitBreakerOptionsBuilder IsTrippedBy<TException>() where TException : Exception
             => IsTrippedBy(e => e is TException);
 
+        [RequiresUnreferencedCode("When bound from an IConfigurationSection (rather than the fluent API), uses ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
         public CircuitBreakerOptions Build()
         {
             var circuitBreakerOptions = new CircuitBreakerOptions();

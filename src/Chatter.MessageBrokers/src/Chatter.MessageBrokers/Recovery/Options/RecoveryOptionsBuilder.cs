@@ -4,6 +4,7 @@ using Chatter.MessageBrokers.Recovery.Retry;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 
 namespace Chatter.MessageBrokers.Recovery.Options
@@ -171,6 +172,7 @@ namespace Chatter.MessageBrokers.Recovery.Options
         public RecoveryOptionsBuilder RetryWhen<TException>() where TException : Exception
             => RetryWhen(e => e is TException);
 
+        [RequiresUnreferencedCode("When bound from an IConfigurationSection (rather than the fluent API), uses ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
         public RecoveryOptions Build()
         {
             var recoveryOptions = new RecoveryOptions();

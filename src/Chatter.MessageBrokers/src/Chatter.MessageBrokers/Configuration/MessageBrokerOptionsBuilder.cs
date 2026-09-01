@@ -4,6 +4,7 @@ using Chatter.MessageBrokers.Reliability.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Chatter.MessageBrokers.Configuration
 {
@@ -61,6 +62,7 @@ namespace Chatter.MessageBrokers.Configuration
             return this;
         }
 
+        [RequiresUnreferencedCode("When bound from an IConfigurationSection (rather than the fluent API), uses ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
         internal MessageBrokerOptions Build()
         {
             var messageBrokerOptions = new MessageBrokerOptions();
