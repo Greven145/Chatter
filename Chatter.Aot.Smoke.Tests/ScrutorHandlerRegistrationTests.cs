@@ -8,9 +8,15 @@ namespace Chatter.Aot.Smoke.Tests;
 
 public class ScrutorHandlerRegistrationTests
 {
+    // Constructor preservation under Native AOT is a whole-program decision, not scoped to the
+    // registration path that requested it: this same published binary also reaches
+    // Chatter.SourceGenerators-generated code that registers ScrutorPingCommandHandler/
+    // ScrutorPingQueryHandler explicitly (SourceGeneratedRegistrationTests), which independently
+    // gives ILC a reason to preserve their constructors everywhere, including here. Resolving a
+    // Scrutor-scanned handler no longer throws in this binary as a result — not because the scan
+    // itself became AOT-safe.
     [Fact]
-    [Trait("AotStatus", "KnownGap")]
-    public void AddChatterCqrs_UnderNativeAot_ThrowsResolvingScrutorDiscoveredCommandHandler()
+    public void AddChatterCqrs_UnderNativeAot_ResolvesScrutorDiscoveredCommandHandlerWhenConstructorPreservedElsewhere()
     {
         var services = new ServiceCollection();
         var configuration = new ConfigurationBuilder().Build();
@@ -19,15 +25,12 @@ public class ScrutorHandlerRegistrationTests
 
         using var provider = services.BuildServiceProvider();
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => provider.GetService<IMessageHandler<ScrutorPingCommand>>());
-        Assert.Contains("suitable constructor", ex.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains(nameof(ScrutorPingCommandHandler), ex.Message, StringComparison.Ordinal);
+        var resolved = provider.GetService<IMessageHandler<ScrutorPingCommand>>();
+        Assert.IsType<ScrutorPingCommandHandler>(resolved);
     }
 
     [Fact]
-    [Trait("AotStatus", "KnownGap")]
-    public void AddChatterCqrs_UnderNativeAot_ThrowsResolvingScrutorDiscoveredQueryHandler()
+    public void AddChatterCqrs_UnderNativeAot_ResolvesScrutorDiscoveredQueryHandlerWhenConstructorPreservedElsewhere()
     {
         var services = new ServiceCollection();
         var configuration = new ConfigurationBuilder().Build();
@@ -36,9 +39,7 @@ public class ScrutorHandlerRegistrationTests
 
         using var provider = services.BuildServiceProvider();
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => provider.GetService<IQueryHandler<ScrutorPingQuery, string>>());
-        Assert.Contains("suitable constructor", ex.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains(nameof(ScrutorPingQueryHandler), ex.Message, StringComparison.Ordinal);
+        var resolved = provider.GetService<IQueryHandler<ScrutorPingQuery, string>>();
+        Assert.IsType<ScrutorPingQueryHandler>(resolved);
     }
 }
