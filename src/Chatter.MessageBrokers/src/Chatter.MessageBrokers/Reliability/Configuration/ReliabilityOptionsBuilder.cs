@@ -16,24 +16,30 @@ namespace Chatter.MessageBrokers.Reliability.Configuration
         public const string ReliabilityOptionsSectionName = "Chatter:MessageBrokers:Reliability";
         private readonly IServiceCollection _services;
         private readonly IConfiguration _configuration;
-        private readonly IConfigurationSection _reliabilityOptionsSection;
 
         public static ReliabilityOptionsBuilder Create(IServiceCollection services)
             => new ReliabilityOptionsBuilder(services);
 
-        private ReliabilityOptionsBuilder(IServiceCollection services) : this(services, null, null) { }
-        private ReliabilityOptionsBuilder(IServiceCollection services, IConfiguration configuration, IConfigurationSection section)
+        private ReliabilityOptionsBuilder(IServiceCollection services) : this(services, null) { }
+        private ReliabilityOptionsBuilder(IServiceCollection services, IConfiguration configuration)
         {
             _services = services ?? throw new ArgumentNullException(nameof(services));
             _configuration = configuration;
-            _reliabilityOptionsSection = section;
         }
 
+        [RequiresUnreferencedCode("Binds ReliabilityOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
+        [RequiresDynamicCode("Binds ReliabilityOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
         public static ReliabilityOptions FromConfig(IServiceCollection services, IConfiguration configuration, string reliabilityOptionsSectionName = ReliabilityOptionsSectionName)
         {
             var section = configuration?.GetSection(reliabilityOptionsSectionName);
-            var builder = new ReliabilityOptionsBuilder(services, configuration, section);
-            return builder.Build();
+            if (section != null && section.Exists())
+            {
+                var reliabilityOptions = section.Get<ReliabilityOptions>();
+                services.Configure<ReliabilityOptions>(section);
+                services.AddSingleton(reliabilityOptions);
+                return reliabilityOptions;
+            }
+            return new ReliabilityOptionsBuilder(services, configuration).Build();
         }
 
         /// <summary>
@@ -73,22 +79,15 @@ namespace Chatter.MessageBrokers.Reliability.Configuration
             return this;
         }
 
-        [RequiresUnreferencedCode("When bound from an IConfigurationSection (rather than the fluent API), uses ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
         public ReliabilityOptions Build()
         {
-            var reliabilityOptions = new ReliabilityOptions();
-            if (_reliabilityOptionsSection != null && _reliabilityOptionsSection.Exists())
+            var reliabilityOptions = new ReliabilityOptions
             {
-                reliabilityOptions = _reliabilityOptionsSection.Get<ReliabilityOptions>();
-                _services.Configure<ReliabilityOptions>(_reliabilityOptionsSection);
-            }
-            else
-            {
-                reliabilityOptions.RouteMessagesToOutbox = _routeMessagesToOutbox;
-                reliabilityOptions.MinutesToLiveInMemory = _minutesToLiveInMemory;
-                reliabilityOptions.EnableOutboxPollingProcessor = _enableOutboxPollingProcessor;
-                reliabilityOptions.OutboxProcessingIntervalInMilliseconds = _outboxProcessingIntervalInMilliseconds;
-            }
+                RouteMessagesToOutbox = _routeMessagesToOutbox,
+                MinutesToLiveInMemory = _minutesToLiveInMemory,
+                EnableOutboxPollingProcessor = _enableOutboxPollingProcessor,
+                OutboxProcessingIntervalInMilliseconds = _outboxProcessingIntervalInMilliseconds
+            };
 
             _services.AddSingleton(reliabilityOptions);
 

@@ -15,19 +15,17 @@ namespace Chatter.MessageBrokers.Configuration
         private TransactionMode _transactionMode = TransactionMode.ReceiveOnly;
         private ReliabilityOptions _reliabilityOptions = null;
         private RecoveryOptions _recoveryOptions = null;
-        private readonly IConfigurationSection _messageBrokerOptionsSection = null;
 
         public const string MessageBrokerSectionName = "Chatter:MessageBrokers";
 
         public static MessageBrokerOptionsBuilder Create(IServiceCollection services)
             => new MessageBrokerOptionsBuilder(services);
 
-        private MessageBrokerOptionsBuilder(IServiceCollection services) : this(services, null, null) { }
-        internal MessageBrokerOptionsBuilder(IServiceCollection services, IConfiguration configuration, IConfigurationSection section = null)
+        private MessageBrokerOptionsBuilder(IServiceCollection services) : this(services, null) { }
+        internal MessageBrokerOptionsBuilder(IServiceCollection services, IConfiguration configuration)
         {
             Services = services;
             _configuration = configuration;
-            _messageBrokerOptionsSection = section;
         }
 
         public MessageBrokerOptionsBuilder WithTransactionMode(TransactionMode transactionMode)
@@ -36,15 +34,27 @@ namespace Chatter.MessageBrokers.Configuration
             return this;
         }
 
+        [RequiresUnreferencedCode("Binds MessageBrokerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
+        [RequiresDynamicCode("Binds MessageBrokerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
         public MessageBrokerOptions FromConfig(string messageBrokerSectionName = MessageBrokerSectionName)
             => FromConfig(Services, _configuration, messageBrokerSectionName);
 
+        [RequiresUnreferencedCode("Binds MessageBrokerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
+        [RequiresDynamicCode("Binds MessageBrokerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
         public static MessageBrokerOptions FromConfig(IServiceCollection services, IConfiguration configuration, string messageBrokerSectionName = MessageBrokerSectionName)
         {
             var section = configuration?.GetSection(messageBrokerSectionName);
-            var builder = new MessageBrokerOptionsBuilder(services, configuration, section);
-            return builder.Build();
+            if (section != null && section.Exists())
+            {
+                return Finish(services, BindFromSection(section));
+            }
+            return new MessageBrokerOptionsBuilder(services, configuration).Build();
         }
+
+        [RequiresUnreferencedCode("Uses ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
+        [RequiresDynamicCode("Uses ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
+        private static MessageBrokerOptions BindFromSection(IConfigurationSection section)
+            => section.Get<MessageBrokerOptions>();
 
         public MessageBrokerOptionsBuilder AddReliabilityOptions(Action<ReliabilityOptionsBuilder> builder)
         {
@@ -62,32 +72,31 @@ namespace Chatter.MessageBrokers.Configuration
             return this;
         }
 
-        [RequiresUnreferencedCode("When bound from an IConfigurationSection (rather than the fluent API), uses ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
         internal MessageBrokerOptions Build()
         {
-            var messageBrokerOptions = new MessageBrokerOptions();
-            if (_messageBrokerOptionsSection != null && _messageBrokerOptionsSection.Exists())
+            var messageBrokerOptions = new MessageBrokerOptions
             {
-                messageBrokerOptions = _messageBrokerOptionsSection.Get<MessageBrokerOptions>();
-            }
-            else
-            {
-                messageBrokerOptions.Reliability = _reliabilityOptions;
-                messageBrokerOptions.Recovery = _recoveryOptions;
-                messageBrokerOptions.TransactionMode = _transactionMode;
-            }
+                Reliability = _reliabilityOptions,
+                Recovery = _recoveryOptions,
+                TransactionMode = _transactionMode
+            };
 
+            return Finish(Services, messageBrokerOptions);
+        }
+
+        private static MessageBrokerOptions Finish(IServiceCollection services, MessageBrokerOptions messageBrokerOptions)
+        {
             if (messageBrokerOptions.Reliability is null)
             {
-                messageBrokerOptions.Reliability = ReliabilityOptionsBuilder.Create(Services).Build();
+                messageBrokerOptions.Reliability = ReliabilityOptionsBuilder.Create(services).Build();
             }
 
             if (messageBrokerOptions.Recovery is null)
             {
-                messageBrokerOptions.Recovery = RecoveryOptionsBuilder.Create(Services).Build();
+                messageBrokerOptions.Recovery = RecoveryOptionsBuilder.Create(services).Build();
             }
 
-            Services.AddSingleton(messageBrokerOptions);
+            services.AddSingleton(messageBrokerOptions);
 
             return messageBrokerOptions;
         }

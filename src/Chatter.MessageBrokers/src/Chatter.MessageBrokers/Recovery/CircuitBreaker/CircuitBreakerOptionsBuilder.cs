@@ -16,25 +16,30 @@ namespace Chatter.MessageBrokers.Recovery.CircuitBreaker
 
         public const string CircuitBreakerOptionsSectionName = "Chatter:MessageBrokers:Recovery:CircuitBreaker";
         private readonly IServiceCollection _services;
-        private readonly IConfigurationSection _circuitBreakerOptionsSection;
         private readonly List<Predicate<Exception>> _exceptionPredicates;
 
         public static CircuitBreakerOptionsBuilder Create(IServiceCollection services)
             => new CircuitBreakerOptionsBuilder(services);
 
-        private CircuitBreakerOptionsBuilder(IServiceCollection services) : this(services, null) { }
-        private CircuitBreakerOptionsBuilder(IServiceCollection services, IConfigurationSection circuitBreakerOptionsSection)
+        private CircuitBreakerOptionsBuilder(IServiceCollection services)
         {
             _services = services ?? throw new ArgumentNullException(nameof(services));
-            _circuitBreakerOptionsSection = circuitBreakerOptionsSection;
             _exceptionPredicates = new List<Predicate<Exception>>();
         }
 
+        [RequiresUnreferencedCode("Binds CircuitBreakerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
+        [RequiresDynamicCode("Binds CircuitBreakerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
         public static CircuitBreakerOptions FromConfig(IServiceCollection services, IConfiguration configuration, string circuitBreakerOptionsSectionName = CircuitBreakerOptionsSectionName)
         {
             var section = configuration?.GetSection(circuitBreakerOptionsSectionName);
-            var builder = new CircuitBreakerOptionsBuilder(services, section);
-            return builder.Build();
+            if (section != null && section.Exists())
+            {
+                var circuitBreakerOptions = section.Get<CircuitBreakerOptions>();
+                services.Configure<CircuitBreakerOptions>(section);
+                services.AddSingleton(circuitBreakerOptions);
+                return circuitBreakerOptions;
+            }
+            return new CircuitBreakerOptionsBuilder(services).Build();
         }
 
         /// <summary>
@@ -116,23 +121,16 @@ namespace Chatter.MessageBrokers.Recovery.CircuitBreaker
         public CircuitBreakerOptionsBuilder IsTrippedBy<TException>() where TException : Exception
             => IsTrippedBy(e => e is TException);
 
-        [RequiresUnreferencedCode("When bound from an IConfigurationSection (rather than the fluent API), uses ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
         public CircuitBreakerOptions Build()
         {
-            var circuitBreakerOptions = new CircuitBreakerOptions();
-            if (_circuitBreakerOptionsSection != null && _circuitBreakerOptionsSection.Exists())
+            var circuitBreakerOptions = new CircuitBreakerOptions
             {
-                circuitBreakerOptions = _circuitBreakerOptionsSection.Get<CircuitBreakerOptions>();
-                _services.Configure<CircuitBreakerOptions>(_circuitBreakerOptionsSection);
-            }
-            else
-            {
-                circuitBreakerOptions.OpenToHalfOpenWaitTimeInSeconds = _openToHalfOpenWaitTimeInSeconds;
-                circuitBreakerOptions.ConcurrentHalfOpenAttempts = _concurrentHalfOpenAttempts;
-                circuitBreakerOptions.NumberOfFailuresBeforeOpen = _numberOfFailuresBeforeOpen;
-                circuitBreakerOptions.NumberOfHalfOpenSuccessesToClose = _numberOfHalfOpenSuccessesToClose;
-                circuitBreakerOptions.SecondsOpenBeforeCriticalFailureNotification = _secondsOpenBeforeCriticalFailureNotification;
-            }
+                OpenToHalfOpenWaitTimeInSeconds = _openToHalfOpenWaitTimeInSeconds,
+                ConcurrentHalfOpenAttempts = _concurrentHalfOpenAttempts,
+                NumberOfFailuresBeforeOpen = _numberOfFailuresBeforeOpen,
+                NumberOfHalfOpenSuccessesToClose = _numberOfHalfOpenSuccessesToClose,
+                SecondsOpenBeforeCriticalFailureNotification = _secondsOpenBeforeCriticalFailureNotification
+            };
 
             if (_exceptionPredicates.Count > 0)
             {

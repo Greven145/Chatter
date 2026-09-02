@@ -15,18 +15,15 @@ namespace Chatter.MessageBrokers.Recovery.Options
 
         public const string RecoveryOptionsSectionName = "Chatter:MessageBrokers:Recovery";
         private readonly IServiceCollection _services;
-        private readonly IConfigurationSection _recoveryOptionsSection;
         private int _maxRetryAttempts = _defaultMaxRetryAttempts;
         private readonly List<Predicate<Exception>> _exceptionPredicates;
 
         private const int _defaultMaxRetryAttempts = 5;
         private const int _maxExponentialRetryAttempts = 15;
 
-        private RecoveryOptionsBuilder(IServiceCollection services) : this(services, null) { }
-        private RecoveryOptionsBuilder(IServiceCollection services, IConfigurationSection section)
+        private RecoveryOptionsBuilder(IServiceCollection services)
         {
             _services = services ?? throw new ArgumentNullException(nameof(services));
-            _recoveryOptionsSection = section;
             _exceptionPredicates = new List<Predicate<Exception>>();
         }
 
@@ -45,11 +42,23 @@ namespace Chatter.MessageBrokers.Recovery.Options
         /// <param name="configuration"></param>
         /// <param name="recoveryOptionsSectionName"></param>
         /// <returns></returns>
+        [RequiresUnreferencedCode("Binds RecoveryOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
+        [RequiresDynamicCode("Binds RecoveryOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
         public static RecoveryOptions FromConfig(IServiceCollection services, IConfiguration configuration, string recoveryOptionsSectionName = RecoveryOptionsSectionName)
         {
             var section = configuration?.GetSection(recoveryOptionsSectionName);
-            var builder = new RecoveryOptionsBuilder(services, section);
-            return builder.Build();
+            if (section != null && section.Exists())
+            {
+                var recoveryOptions = section.Get<RecoveryOptions>();
+                services.Configure<RecoveryOptions>(section);
+                if (recoveryOptions.CircuitBreakerOptions is null)
+                {
+                    recoveryOptions.CircuitBreakerOptions = CircuitBreakerOptionsBuilder.Create(services).Build();
+                }
+                services.AddSingleton(recoveryOptions);
+                return recoveryOptions;
+            }
+            return new RecoveryOptionsBuilder(services).Build();
         }
 
         /// <summary>
@@ -172,20 +181,13 @@ namespace Chatter.MessageBrokers.Recovery.Options
         public RecoveryOptionsBuilder RetryWhen<TException>() where TException : Exception
             => RetryWhen(e => e is TException);
 
-        [RequiresUnreferencedCode("When bound from an IConfigurationSection (rather than the fluent API), uses ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
         public RecoveryOptions Build()
         {
-            var recoveryOptions = new RecoveryOptions();
-            if (_recoveryOptionsSection != null && _recoveryOptionsSection.Exists())
+            var recoveryOptions = new RecoveryOptions
             {
-                recoveryOptions = _recoveryOptionsSection.Get<RecoveryOptions>();
-                _services.Configure<RecoveryOptions>(_recoveryOptionsSection);
-            }
-            else
-            {
-                recoveryOptions.MaxRetryAttempts = _maxRetryAttempts;
-                recoveryOptions.CircuitBreakerOptions = _circuitBreakerOptions;
-            }
+                MaxRetryAttempts = _maxRetryAttempts,
+                CircuitBreakerOptions = _circuitBreakerOptions
+            };
 
             if (_exceptionPredicates.Count > 0)
             {

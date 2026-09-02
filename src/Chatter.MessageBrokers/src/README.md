@@ -210,6 +210,8 @@ chatterBuilder.WithAotJsonSerialization(MyMessagesJsonContext.Default);
 
 `AddAllReceivers`, `AddChatterCqrs`'s Scrutor scan, and `ChatterJson.Options` remain the unchanged defaults; nothing above changes their behavior for consumers who don't opt in.
 
+**Config-bound options.** `MessageBrokerOptionsBuilder.FromConfig`, `ReliabilityOptionsBuilder.FromConfig`, `RecoveryOptionsBuilder.FromConfig`, and `CircuitBreakerOptionsBuilder.FromConfig` bind their options from an `IConfigurationSection` via `ConfigurationBinder.Get<T>` — reflection-based, and annotated `[RequiresUnreferencedCode]`/`[RequiresDynamicCode]`. The fluent, non-config API on each builder (`Create(services).With...().Build()`, and `MessageBrokerOptionsBuilder.AddReliabilityOptions`/`AddRecoveryOptions`) is fully reflection-free and carries no annotation — prefer it under AOT/trimming.
+
 ## Domain Language
 
 Terminology used throughout this module (Brokered Message, Receiver, Dispatcher, Router/Forwarder, Inbox/Outbox, Recovery, Circuit Breaker, Critical Failure, Error Queue, Max Receives Exceeded, Body Converter) is defined in the [domain glossary](../CONTEXT.md).
