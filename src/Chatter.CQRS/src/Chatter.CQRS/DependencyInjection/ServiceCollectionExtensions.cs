@@ -12,8 +12,8 @@ namespace Chatter.CQRS.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        [RequiresUnreferencedCode("Reflects over behaviorType's implemented interfaces and, for an open generic behavior, scans its assembly via Scrutor to find and register implementations.")]
-        [RequiresDynamicCode("For a closed generic behavior type, resolves the closed ICommandBehavior<> interface via Type.MakeGenericType.")]
+        [RequiresUnreferencedCode("Reflects over behaviorType's implemented interfaces and, for an open generic behavior, scans its assembly via Scrutor to find and register implementations. Use AddCommandBehavior<TCommand, TCommandBehavior> for an AOT-safe, explicit alternative.")]
+        [RequiresDynamicCode("For a closed generic behavior type, resolves the closed ICommandBehavior<> interface via Type.MakeGenericType. Use AddCommandBehavior<TCommand, TCommandBehavior> for an AOT-safe, explicit alternative.")]
         public static IServiceCollection AddPipelineBehavior(this IServiceCollection services, Type behaviorType)
         {
             _ = behaviorType ?? throw new ArgumentNullException(nameof(behaviorType), "Cannot add null behavior type to command pipeline.");
@@ -110,8 +110,8 @@ namespace Chatter.CQRS.DependencyInjection
             return services;
         }
 
-        [RequiresUnreferencedCode("Reflects over closedGenericBehaviorType's implemented interfaces to locate its ICommandBehavior<> closure.")]
-        [RequiresDynamicCode("Resolves the closed ICommandBehavior<> interface via Type.MakeGenericType.")]
+        [RequiresUnreferencedCode("Reflects over closedGenericBehaviorType's implemented interfaces to locate its ICommandBehavior<> closure. Use AddCommandBehavior<TCommand, TCommandBehavior> for an AOT-safe, explicit alternative.")]
+        [RequiresDynamicCode("Resolves the closed ICommandBehavior<> interface via Type.MakeGenericType. Use AddCommandBehavior<TCommand, TCommandBehavior> for an AOT-safe, explicit alternative.")]
         public static IServiceCollection RegisterBehaviorForCommand(this IServiceCollection services, Type closedGenericBehaviorType)
         {
             var commandBehaviorType = typeof(ICommandBehavior<>);
