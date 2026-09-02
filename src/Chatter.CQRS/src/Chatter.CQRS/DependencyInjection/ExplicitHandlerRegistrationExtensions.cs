@@ -15,7 +15,8 @@ namespace Microsoft.Extensions.DependencyInjection
     /// An AOT-safe, reflection-free alternative to <see cref="CqrsExtensions.AddChatterCqrs(IServiceCollection, IConfiguration, Action{CommandPipelineBuilder}, Action{AssemblySourceFilterBuilder})"/>
     /// and its Scrutor assembly-scanning overloads. Register each handler explicitly via
     /// <see cref="AddCommandHandler{TCommand, THandler}"/>, <see cref="AddEventHandler{TEvent, THandler}"/>, and
-    /// <see cref="AddQueryHandler{TQuery, TResult, THandler}"/>.
+    /// <see cref="AddQueryHandler{TQuery, TResult, THandler}"/>. Register pipeline behaviors explicitly via
+    /// <see cref="AddCommandBehavior{TCommand, TCommandBehavior}"/>.
     /// </summary>
     public static class ExplicitHandlerRegistrationExtensions
     {
@@ -72,5 +73,20 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return services.AddTransient<IQueryHandler<TQuery, TResult>, THandler>();
         }
+
+        /// <summary>
+        /// Registers <typeparamref name="TCommandBehavior"/> as a behavior in the pipeline for
+        /// <typeparamref name="TCommand"/>, alongside any other behaviors already registered for that command type —
+        /// matching the additive semantics of the reflection-based path
+        /// (<see cref="ServiceCollectionExtensions.RegisterBehaviorForCommand"/>). There is no explicit,
+        /// reflection-free equivalent of <see cref="ServiceCollectionExtensions.RegisterBehaviorForAllCommands"/>
+        /// (an open generic behavior applied to every command type): that requires enumerating every command type at
+        /// runtime, which is unavoidably a whole-program scan. To apply the same behavior to multiple commands under
+        /// AOT, call this method once per command type.
+        /// </summary>
+        public static IServiceCollection AddCommandBehavior<TCommand, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TCommandBehavior>(this IServiceCollection services)
+            where TCommand : ICommand
+            where TCommandBehavior : class, ICommandBehavior<TCommand>
+            => services.AddTransient<ICommandBehavior<TCommand>, TCommandBehavior>();
     }
 }
