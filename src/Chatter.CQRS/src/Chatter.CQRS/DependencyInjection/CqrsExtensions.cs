@@ -144,6 +144,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
+        [RequiresUnreferencedCode("Reflects over the implemented-interfaces closure of a runtime-supplied Type, which trimming cannot statically analyze.")]
         internal static bool IsValidMessageHandler(this Type type, Type genericParameterMatchType)
             => (!type.IsGenericType || type.IsGenericTypeWithNonGenericTypeParameters())
                 && type.IsImplementingOpenGenericTypeWithMatchingTypeParameter(typeof(IMessageHandler<>), genericParameterMatchType);

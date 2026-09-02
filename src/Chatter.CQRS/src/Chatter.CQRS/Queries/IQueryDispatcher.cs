@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using Chatter.CQRS.Context;
 
 namespace Chatter.CQRS.Queries
@@ -11,6 +12,7 @@ namespace Chatter.CQRS.Queries
         /// <typeparam name="TResult">The type of result to be returned by the query</typeparam>
         /// <param name="query">The query to be dispatched.</param>
         /// <returns>An awaitable <see cref="Task"/> containing the query result</returns>
+        [RequiresDynamicCode("Resolves the query's handler type via Type.MakeGenericType because only the query's runtime type, not its compile-time IQuery<TResult> type, is known here. Use Query<TQuery, TResult> for an AOT-safe, compile-time-typed alternative.")]
         Task<TResult> Query<TResult>(IQuery<TResult> query);
 		/// <summary>
 		/// Dispatches an <see cref="IQuery"/> to its <see cref="IQueryHandler{TQuery, TResult}"/> with additional context.
@@ -19,6 +21,7 @@ namespace Chatter.CQRS.Queries
 		/// <param name="query">The query to be dispatched.</param>
 		/// <param name="queryHandlerContext">The context to be dispatched with <paramref name="query"/>.</param>
 		/// <returns>An awaitable <see cref="Task"/> containing the query result</returns>
+		[RequiresDynamicCode("Resolves the query's handler type via Type.MakeGenericType because only the query's runtime type, not its compile-time IQuery<TResult> type, is known here. Use Query<TQuery, TResult> for an AOT-safe, compile-time-typed alternative.")]
 		Task<TResult> Query<TResult>(IQuery<TResult> query, IQueryHandlerContext queryHandlerContext);
 		/// <summary>
 		/// Dispatches an <see cref="IQuery"/> to its <see cref="IQueryHandler{TQuery, TResult}"/>.

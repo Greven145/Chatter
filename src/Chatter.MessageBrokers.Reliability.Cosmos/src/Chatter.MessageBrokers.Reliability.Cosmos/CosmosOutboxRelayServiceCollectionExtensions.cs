@@ -2,6 +2,7 @@ using Chatter.MessageBrokers;
 using Chatter.MessageBrokers.Reliability.Cosmos;
 using Microsoft.Extensions.Hosting;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Microsoft.Extensions.DependencyInjection
@@ -81,7 +82,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentException"><paramref name="configure"/> also sets
         /// <see cref="CosmosOutboxRelayOptions.BodyResolverFactory"/>, or the configured options omit a required factory or
         /// partition-key path.</exception>
-        public static IServiceCollection AddCosmosOutboxRelay<TResolver>(this IServiceCollection services, Action<CosmosOutboxRelayOptions> configure)
+        public static IServiceCollection AddCosmosOutboxRelay<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TResolver>(this IServiceCollection services, Action<CosmosOutboxRelayOptions> configure)
             where TResolver : class, IOutboxBodyResolver
         {
             _ = services ?? throw new ArgumentNullException(nameof(services));
@@ -112,7 +113,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentException"><paramref name="configure"/> also sets
         /// <see cref="CosmosOutboxRelayOptions.BodyResolverFactory"/>, or the configured options omit a required factory or
         /// partition-key path.</exception>
-        public static IServiceCollection AddCosmosOutboxRelay<TResolver>(this IServiceCollection services, object serviceKey, Action<CosmosOutboxRelayOptions> configure)
+        public static IServiceCollection AddCosmosOutboxRelay<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TResolver>(this IServiceCollection services, object serviceKey, Action<CosmosOutboxRelayOptions> configure)
             where TResolver : class, IOutboxBodyResolver
         {
             _ = services ?? throw new ArgumentNullException(nameof(services));

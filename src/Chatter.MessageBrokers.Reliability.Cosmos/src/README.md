@@ -270,6 +270,10 @@ Unlike `WithCosmosDocumentReliability<TCommand>`, the standalone inbox is **leas
 - **`WithCosmosDocumentReliability` + `WithCosmosInbox` is UNSUPPORTED** in one pipeline (ADR-0009 D3). They dedup by different mechanisms; registering both makes `InboxBehavior<>` fire the standalone write-ahead claim **before** the handler for document-tier participant commands too, pre-empting the document tier's atomic in-batch dedup. This is **documented, not code-guarded** — no current consumer uses the document tier.
 - **`AddCosmosOutboxRelay` + `WithCosmosInbox` is fully SUPPORTED.** The standalone outbox relay and the standalone inbox are orthogonal lease-less primitives and compose cleanly (a consumer that drains its own outbox container and dedups inbound messages).
 
+## Native AOT
+
+`IsAotCompatible` is set for this module, but the Azure Cosmos DB .NET SDK (`Microsoft.Azure.Cosmos`) carries a real, upstream Newtonsoft.Json dependency outside Chatter's control: as of v3.61.0 (the version referenced here, at the time this was written), it is not declared as a NuGet package dependency (absent from this module's `packages.lock.json`), but the SDK's own client assembly references Newtonsoft.Json types internally (`NewtonsoftToCosmosDBReader`/`CosmosDBToNewtonsoftReader`/`NewtonsoftSettings`, found by inspecting `Microsoft.Azure.Cosmos.Client.dll` directly) — reflection-heavy code the trim analyzer cannot see or warn about, since it lives inside a third-party assembly not annotated for trimming. This is a permanent, upstream limitation this initiative does not attempt to solve; re-verify against whatever SDK version is current before relying on this note, since a future release could change it.
+
 ## Domain Language
 
 See [CONTEXT.md](../../Chatter.MessageBrokers/CONTEXT.md) for the domain glossary (Document Tier, Document-Tier Batch-Lifecycle Behavior, Atomic-Write Handle, Partition-Key Resolver, Co-Resident Outbox / Inbox Marker, Outbox Relay, Participation).

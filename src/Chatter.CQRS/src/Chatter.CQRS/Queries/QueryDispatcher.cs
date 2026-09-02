@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -24,10 +25,12 @@ namespace Chatter.CQRS.Queries
         }
 
 		///<inheritdoc/>
+		[RequiresDynamicCode("Resolves the query's handler type via Type.MakeGenericType because only the query's runtime type, not its compile-time IQuery<TResult> type, is known here. Use Query<TQuery, TResult> for an AOT-safe, compile-time-typed alternative.")]
 		public Task<TResult> Query<TResult>(IQuery<TResult> query)
 			=> Query<TResult>(query, new QueryHandlerContext());
-		
+
 		///<inheritdoc/>
+		[RequiresDynamicCode("Resolves the query's handler type via Type.MakeGenericType because only the query's runtime type, not its compile-time IQuery<TResult> type, is known here. Use Query<TQuery, TResult> for an AOT-safe, compile-time-typed alternative.")]
 		public async Task<TResult> Query<TResult>(IQuery<TResult> query, IQueryHandlerContext queryHandlerContext)
         {
             try
