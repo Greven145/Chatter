@@ -2,6 +2,7 @@ using Chatter.CQRS;
 using Chatter.CQRS.Commands;
 using Chatter.CQRS.Context;
 using Chatter.CQRS.Events;
+using Chatter.CQRS.Pipeline;
 using Chatter.CQRS.Queries;
 
 namespace Chatter.Aot.Smoke.Tests.Fakes;
@@ -68,5 +69,29 @@ public sealed class ExplicitPingEventHandlerSecond : IMessageHandler<ExplicitPin
     {
         message.HandledBySecond = true;
         return Task.CompletedTask;
+    }
+}
+
+public sealed class BehaviorPingCommand : ICommand
+{
+    public List<string> ExecutionOrder { get; } = new();
+}
+
+public sealed class BehaviorPingCommandHandler : IMessageHandler<BehaviorPingCommand>
+{
+    public Task Handle(BehaviorPingCommand message, IMessageHandlerContext context)
+    {
+        message.ExecutionOrder.Add("handler");
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class BehaviorPingCommandBehavior : ICommandBehavior<BehaviorPingCommand>
+{
+    public async Task Handle(BehaviorPingCommand message, IMessageHandlerContext messageHandlerContext, CommandHandlerDelegate next)
+    {
+        message.ExecutionOrder.Add("behavior-before");
+        await next();
+        message.ExecutionOrder.Add("behavior-after");
     }
 }
