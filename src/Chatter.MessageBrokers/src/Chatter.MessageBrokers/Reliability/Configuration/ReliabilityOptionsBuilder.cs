@@ -27,8 +27,8 @@ namespace Chatter.MessageBrokers.Reliability.Configuration
             _configuration = configuration;
         }
 
-        [RequiresUnreferencedCode("Binds ReliabilityOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
-        [RequiresDynamicCode("Binds ReliabilityOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
+        [RequiresUnreferencedCode("Binds ReliabilityOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze. Use the fluent, non-config API (Create(services).WithOutboxRouting()...Build()) for an AOT-safe alternative.")]
+        [RequiresDynamicCode("Binds ReliabilityOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze. Use the fluent, non-config API (Create(services).WithOutboxRouting()...Build()) for an AOT-safe alternative.")]
         public static ReliabilityOptions FromConfig(IServiceCollection services, IConfiguration configuration, string reliabilityOptionsSectionName = ReliabilityOptionsSectionName)
         {
             var section = configuration?.GetSection(reliabilityOptionsSectionName);

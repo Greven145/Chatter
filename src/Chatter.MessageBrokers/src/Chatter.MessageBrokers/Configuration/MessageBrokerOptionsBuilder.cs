@@ -34,13 +34,13 @@ namespace Chatter.MessageBrokers.Configuration
             return this;
         }
 
-        [RequiresUnreferencedCode("Binds MessageBrokerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
-        [RequiresDynamicCode("Binds MessageBrokerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
+        [RequiresUnreferencedCode("Binds MessageBrokerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze. Use the fluent, non-config API (Create(services).WithTransactionMode(...).AddReliabilityOptions(...).AddRecoveryOptions(...).Build()) for an AOT-safe alternative.")]
+        [RequiresDynamicCode("Binds MessageBrokerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze. Use the fluent, non-config API (Create(services).WithTransactionMode(...).AddReliabilityOptions(...).AddRecoveryOptions(...).Build()) for an AOT-safe alternative.")]
         public MessageBrokerOptions FromConfig(string messageBrokerSectionName = MessageBrokerSectionName)
             => FromConfig(Services, _configuration, messageBrokerSectionName);
 
-        [RequiresUnreferencedCode("Binds MessageBrokerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
-        [RequiresDynamicCode("Binds MessageBrokerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
+        [RequiresUnreferencedCode("Binds MessageBrokerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze. Use the fluent, non-config API (Create(services).WithTransactionMode(...).AddReliabilityOptions(...).AddRecoveryOptions(...).Build()) for an AOT-safe alternative.")]
+        [RequiresDynamicCode("Binds MessageBrokerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze. Use the fluent, non-config API (Create(services).WithTransactionMode(...).AddReliabilityOptions(...).AddRecoveryOptions(...).Build()) for an AOT-safe alternative.")]
         public static MessageBrokerOptions FromConfig(IServiceCollection services, IConfiguration configuration, string messageBrokerSectionName = MessageBrokerSectionName)
         {
             var section = configuration?.GetSection(messageBrokerSectionName);

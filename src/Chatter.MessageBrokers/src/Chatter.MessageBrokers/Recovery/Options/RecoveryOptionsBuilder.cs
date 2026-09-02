@@ -42,8 +42,8 @@ namespace Chatter.MessageBrokers.Recovery.Options
         /// <param name="configuration"></param>
         /// <param name="recoveryOptionsSectionName"></param>
         /// <returns></returns>
-        [RequiresUnreferencedCode("Binds RecoveryOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
-        [RequiresDynamicCode("Binds RecoveryOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
+        [RequiresUnreferencedCode("Binds RecoveryOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze. Use the fluent, non-config API (Create(services).WithMaxRetryAttempts(...).WithCircuitBreaker(...)...Build()) for an AOT-safe alternative.")]
+        [RequiresDynamicCode("Binds RecoveryOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze. Use the fluent, non-config API (Create(services).WithMaxRetryAttempts(...).WithCircuitBreaker(...)...Build()) for an AOT-safe alternative.")]
         public static RecoveryOptions FromConfig(IServiceCollection services, IConfiguration configuration, string recoveryOptionsSectionName = RecoveryOptionsSectionName)
         {
             var section = configuration?.GetSection(recoveryOptionsSectionName);

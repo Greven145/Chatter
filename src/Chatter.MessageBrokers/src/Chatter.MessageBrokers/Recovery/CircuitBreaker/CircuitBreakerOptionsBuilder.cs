@@ -27,8 +27,8 @@ namespace Chatter.MessageBrokers.Recovery.CircuitBreaker
             _exceptionPredicates = new List<Predicate<Exception>>();
         }
 
-        [RequiresUnreferencedCode("Binds CircuitBreakerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
-        [RequiresDynamicCode("Binds CircuitBreakerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze.")]
+        [RequiresUnreferencedCode("Binds CircuitBreakerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze. Use the fluent, non-config API (Create(services).SetOpenToHalfOpenWaitTime(...)...Build()) for an AOT-safe alternative.")]
+        [RequiresDynamicCode("Binds CircuitBreakerOptions from an IConfigurationSection via ConfigurationBinder.Get<T>, which trimming cannot statically analyze. Use the fluent, non-config API (Create(services).SetOpenToHalfOpenWaitTime(...)...Build()) for an AOT-safe alternative.")]
         public static CircuitBreakerOptions FromConfig(IServiceCollection services, IConfiguration configuration, string circuitBreakerOptionsSectionName = CircuitBreakerOptionsSectionName)
         {
             var section = configuration?.GetSection(circuitBreakerOptionsSectionName);

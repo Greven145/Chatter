@@ -16,7 +16,7 @@ namespace Chatter.CQRS.DependencyInjection
         /// Returns a subset of <see cref="Assembly"/> after applying filter criteria
         /// </summary>
         /// <returns></returns>
-        [RequiresUnreferencedCode("Enumerates every type in each candidate assembly (Assembly.GetTypes) to match against a namespace selector, which trimming cannot statically analyze.")]
+        [RequiresUnreferencedCode("Enumerates every type in each candidate assembly (Assembly.GetTypes) to match against a namespace selector, which trimming cannot statically analyze. Use AddChatterCqrsWithExplicitHandlers with AddCommandHandler/AddEventHandler/AddQueryHandler for an AOT-safe, explicit alternative.")]
         IEnumerable<Assembly> Apply();
     }
 
@@ -49,7 +49,7 @@ namespace Chatter.CQRS.DependencyInjection
         /// Applies filter criteria against the <see cref="IAssemblyFilterSourceProvider"/>, returning the <see cref="Assembly"/> that match.
         /// </summary>
         /// <returns>The enumerable of assemblies that match filter criteria and any <see cref="ExplictAssemblies"/></returns>
-        [RequiresUnreferencedCode("Enumerates every type in each candidate assembly (Assembly.GetTypes) to match against NamespaceSelector, which trimming cannot statically analyze.")]
+        [RequiresUnreferencedCode("Enumerates every type in each candidate assembly (Assembly.GetTypes) to match against NamespaceSelector, which trimming cannot statically analyze. Use AddChatterCqrsWithExplicitHandlers with AddCommandHandler/AddEventHandler/AddQueryHandler for an AOT-safe, explicit alternative.")]
         public IEnumerable<Assembly> Apply()
             => ExplictAssemblies.Union(GetAssembliesThatMatchNamespaceSelector());
 
