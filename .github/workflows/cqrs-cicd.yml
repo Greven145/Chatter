@@ -55,6 +55,10 @@ jobs:
             exit 1
           fi
           echo "Release guard passed: $TAG does not yet exist."
+      - name: Build Chatter.SourceGenerators
+        run: |
+          dotnet restore src/Chatter.SourceGenerators/src/Chatter.SourceGenerators/Chatter.SourceGenerators.csproj --locked-mode
+          dotnet build src/Chatter.SourceGenerators/src/Chatter.SourceGenerators/Chatter.SourceGenerators.csproj -c Release --no-restore
       - name: Restore
         run: dotnet restore 'src/Chatter.CQRS/src/Chatter.CQRS/Chatter.CQRS.csproj' --locked-mode
       - name: Pack
