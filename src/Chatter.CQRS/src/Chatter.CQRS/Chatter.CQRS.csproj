@@ -32,4 +32,17 @@
     <PackageReference Include="Scrutor" Version="3.3.0" />
   </ItemGroup>
 
+  <!--
+    Embeds Chatter.SourceGenerators' built netstandard2.0 DLL into this package's own
+    analyzers/dotnet/cs folder, so referencing Chatter.CQRS is enough to get the generator —
+    no separate PackageReference. Requires Chatter.SourceGenerators to already be built (its DLL
+    must exist at this path) before `dotnet pack` runs here.
+  -->
+  <Target Name="IncludeSourceGeneratorInPackage" BeforeTargets="_GetPackageFiles">
+    <ItemGroup>
+      <None Include="$(MSBuildThisFileDirectory)..\..\..\Chatter.SourceGenerators\src\Chatter.SourceGenerators\bin\$(Configuration)\netstandard2.0\Chatter.SourceGenerators.dll"
+            Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    </ItemGroup>
+  </Target>
+
 </Project>

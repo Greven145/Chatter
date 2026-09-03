@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -6,27 +6,12 @@
     <Nullable>enable</Nullable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <PackageId>Chatter.SourceGenerators</PackageId>
-    <Version>0.1.0</Version>
-    <Authors>Brennan Pike</Authors>
-    <Owners>Brennan Pike</Owners>
-    <Description>Opt-in Roslyn source generators that discover Chatter.CQRS/Chatter.MessageBrokers types (handlers, pipeline behaviors, brokered message receivers) at compile time and emit explicit, reflection-free registration calls — a Native AOT/trimming-safe alternative to Scrutor assembly scanning.</Description>
-    <RepositoryUrl>https://github.com/brenpike/Chatter</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>SourceGenerator,AOT,Trimming,CQRS,DependencyInjection</PackageTags>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <IsPackable>true</IsPackable>
-    <DevelopmentDependency>true</DevelopmentDependency>
-    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
 
 </Project>

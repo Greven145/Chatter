@@ -110,7 +110,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return chatterBuilder;
         }
 
-        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> implementations.")]
+        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> implementations. Implement IMessageHandler<> on your handler types and call Chatter.CQRS.SourceGenerated.GeneratedHandlerRegistration.RegisterAll(services) for an AOT-safe, source-generated alternative — referencing Chatter.CQRS already includes the generator, no extra package needed.")]
         internal static IServiceCollection AddMessageHandlers(this IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
             AddCommandHandlers(services, assemblies);
@@ -118,7 +118,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> implementations.")]
+        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> implementations. Implement IMessageHandler<> on your handler types and call Chatter.CQRS.SourceGenerated.GeneratedHandlerRegistration.RegisterAll(services) for an AOT-safe, source-generated alternative — referencing Chatter.CQRS already includes the generator, no extra package needed.")]
         internal static IServiceCollection AddEventHandlers(this IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
             services.Scan(s =>
@@ -131,7 +131,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> implementations.")]
+        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IMessageHandler<> implementations. Implement IMessageHandler<> on your handler types and call Chatter.CQRS.SourceGenerated.GeneratedHandlerRegistration.RegisterAll(services) for an AOT-safe, source-generated alternative — referencing Chatter.CQRS already includes the generator, no extra package needed.")]
         internal static IServiceCollection AddCommandHandlers(this IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
             services.Scan(s =>
@@ -149,7 +149,7 @@ namespace Microsoft.Extensions.DependencyInjection
             => (!type.IsGenericType || type.IsGenericTypeWithNonGenericTypeParameters())
                 && type.IsImplementingOpenGenericTypeWithMatchingTypeParameter(typeof(IMessageHandler<>), genericParameterMatchType);
 
-        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IQueryHandler<,> implementations.")]
+        [RequiresUnreferencedCode("Scans assemblies via Scrutor to find and register IQueryHandler<,> implementations. Implement IQueryHandler<,> on your handler types and call Chatter.CQRS.SourceGenerated.GeneratedHandlerRegistration.RegisterAll(services) for an AOT-safe, source-generated alternative — referencing Chatter.CQRS already includes the generator, no extra package needed.")]
         internal static IServiceCollection AddQueryHandlers(this IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
             services.Scan(s =>
