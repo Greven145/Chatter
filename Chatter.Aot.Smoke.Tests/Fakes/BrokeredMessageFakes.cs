@@ -13,3 +13,12 @@ public sealed class ScrutorPongMessage : IMessage
 public sealed class ExplicitPongMessage : IMessage
 {
 }
+
+// Deliberately its own [BrokeredMessage] type, not ScrutorPongMessage: calling the generated
+// RegisterAll() makes BrokeredMessageReceiverBackgroundService<T> reachable for whatever T it
+// discovers, and Native AOT preservation is whole-program — sharing ScrutorPongMessage here would
+// flip ScrutorHandlerRegistrationTests' sibling KnownGap test green for the wrong reason.
+[BrokeredMessage(sendingPath: null, receivingPath: "aot-smoke-generated-queue")]
+public sealed class GeneratedPongMessage : IMessage
+{
+}

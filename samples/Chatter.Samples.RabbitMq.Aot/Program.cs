@@ -1,6 +1,7 @@
 using Chatter.CQRS.SourceGenerated;
 using Chatter.MessageBrokers.RabbitMQ;
 using Chatter.MessageBrokers.Sending;
+using Chatter.MessageBrokers.SourceGenerated;
 using Chatter.Samples.RabbitMq.Aot;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -26,10 +27,12 @@ using Microsoft.Extensions.Hosting;
 //      unconditionally scans for [BrokeredMessage]-decorated types as part of its own default
 //      behavior even when every receiver is otherwise registered explicitly; the former carries
 //      neither RequiresUnreferencedCode nor RequiresDynamicCode at all.
-//   4. AddQueueReceiver<TMessage> for the broker receiver STAYS a manual, hand-written call - the
-//      source generator does not cover receiver registration yet (only CQRS handlers and
-//      all-commands behaviors, as of #408). Don't assume it does; this is a real, current gap,
-//      not a choice made for this sample.
+//   4. GeneratedReceiverRegistration.RegisterAll(services) instead of a hand-written
+//      AddQueueReceiver<TMessage>() call - PingSent carries [BrokeredMessage(...)] instead, and
+//      Chatter.SourceGenerators' BrokeredMessageReceiverRegistrationGenerator discovers it at
+//      build time and emits the equivalent AddReceiver<TMessage>(ReceiverOptions) call, reading
+//      the attribute's constructor arguments (not its InfrastructureType - that one has no
+//      compile-time-constant value available here, see Ping.cs).
 //   5. WithAotJsonSerialization(consumerContext) with a [JsonSerializable]-decorated
 //      JsonSerializerContext for every message DTO - required for message-body (de)serialization
 //      to work under Native AOT at all, not just to silence a warning. Without it, the receiver
@@ -45,9 +48,8 @@ GeneratedHandlerRegistration.RegisterAll(chatterBuilder.Services);
 chatterBuilder
     .AddMessageBrokersWithExplicitReceivers()
     .WithAotJsonSerialization(PingSentJsonContext.Default)
-    .AddRabbitMq(rmq => rmq
-        .AddRabbitMqOptions(uri: amqpUri)
-        .AddQueueReceiver<PingSent>(PingQueue.Name, deadLetterQueuePath: PingQueue.DeadLetterName));
+    .AddRabbitMq(rmq => rmq.AddRabbitMqOptions(uri: amqpUri));
+GeneratedReceiverRegistration.RegisterAll(chatterBuilder.Services);
 
 using var host = builder.Build();
 await host.StartAsync();
