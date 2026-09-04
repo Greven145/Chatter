@@ -8,18 +8,23 @@ using Microsoft.Extensions.Hosting;
 // (assembly scanning), no AddMessageBrokers' scanning overload, no runtime mode switch. Unlike
 // Chatter.Samples.RabbitMq (which compiles both paths into one binary so its reflection-based
 // `scan` mode's genuinely trim-unsafe calls still show up in a `dotnet publish` warning count,
-// even though only its `explicit` mode is meant to run under AOT), this project's
-// `dotnet publish -c Release -r linux-x64` is verified warning-free: nothing trim-unsafe is
-// compiled in at all, so there's nothing for the analyzer to flag.
+// even though only its `explicit` mode is meant to run under AOT), this project's OWN code
+// produces zero analyzer warnings on `dotnet publish -c Release -r linux-x64` - verified
+// directly. Warnings from inside the referenced libraries' own internals still appear (see
+// samples/README.md) - those are separately tracked, not something this sample's code causes.
 //
 // What a consumer does differently here versus the default reflection-based path:
 //   1. AddChatterCqrsWithExplicitHandlers instead of AddChatterCqrs - no assembly scan.
 //   2. AddCommandHandler<TCommand, THandler>() per handler instead of relying on scanning to
 //      discover IMessageHandler<> implementations.
-//   3. AddQueueReceiver<TMessage> for the broker receiver - already AOT-safe either way (it
+//   3. AddMessageBrokersWithExplicitReceivers instead of AddMessageBrokers - the latter
+//      unconditionally scans for [BrokeredMessage]-decorated types as part of its own default
+//      behavior even when every receiver is otherwise registered explicitly; the former carries
+//      neither RequiresUnreferencedCode nor RequiresDynamicCode at all.
+//   4. AddQueueReceiver<TMessage> for the broker receiver - already AOT-safe either way (it
 //      delegates to the generic Services.AddReceiver<TMessage>, confirmed by reading
 //      RabbitMqOptionsBuilder.cs), so no change needed there versus the default path.
-//   4. WithAotJsonSerialization(consumerContext) with a [JsonSerializable]-decorated
+//   5. WithAotJsonSerialization(consumerContext) with a [JsonSerializable]-decorated
 //      JsonSerializerContext for every message DTO - required for message-body (de)serialization
 //      to work under Native AOT at all, not just to silence a warning. Without it, the receiver
 //      throws at runtime the moment it tries to deserialize a real message (verified directly
@@ -32,7 +37,7 @@ builder.Services.AddSingleton<PingReceived>();
 var chatterBuilder = builder.Services.AddChatterCqrsWithExplicitHandlers(builder.Configuration);
 chatterBuilder.Services.AddCommandHandler<PingSent, PingSentHandler>();
 chatterBuilder
-    .AddMessageBrokers()
+    .AddMessageBrokersWithExplicitReceivers()
     .WithAotJsonSerialization(PingSentJsonContext.Default)
     .AddRabbitMq(rmq => rmq
         .AddRabbitMqOptions(uri: amqpUri)
