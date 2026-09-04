@@ -26,6 +26,14 @@
   <ItemGroup>
     <ProjectReference Include="..\src\Chatter.CQRS\src\Chatter.CQRS\Chatter.CQRS.csproj" />
     <ProjectReference Include="..\src\Chatter.MessageBrokers\src\Chatter.MessageBrokers\Chatter.MessageBrokers.csproj" />
+    <!--
+      A ProjectReference here (even with ReferenceOutputAssembly=false) still pulls this netstandard2.0
+      analyzer project into the same publish graph and inherits PublishAot/RuntimeIdentifier from the
+      command line, which NETSDK1207-fails since AOT publishing isn't defined for netstandard2.0. Reference
+      the built analyzer DLL directly instead — this is also how an external NuGet consumer would actually
+      receive it (packed under analyzers/dotnet/cs), so it exercises the real consumption shape.
+    -->
+    <Analyzer Include="..\src\Chatter.SourceGenerators\src\Chatter.SourceGenerators\bin\$(Configuration)\netstandard2.0\Chatter.SourceGenerators.dll" />
   </ItemGroup>
 
 </Project>

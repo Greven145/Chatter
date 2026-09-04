@@ -85,7 +85,7 @@ namespace Chatter.CQRS.DependencyInjection
             return services;
         }
 
-        [RequiresUnreferencedCode("Reflects over openGenericBehaviorType's implemented interfaces and scans its assembly via Scrutor to find and register implementations.")]
+        [RequiresUnreferencedCode("Reflects over openGenericBehaviorType's implemented interfaces and scans its assembly via Scrutor to find and register implementations. Mark the open-generic behavior type with [RegisterForAllCommands] and call Chatter.CQRS.SourceGenerated.GeneratedAllCommandsBehaviorRegistration.RegisterAll(services) for an AOT-safe, source-generated alternative — referencing Chatter.CQRS already includes the generator, no extra package needed.")]
         public static IServiceCollection RegisterBehaviorForAllCommands(this IServiceCollection services, Type openGenericBehaviorType)
         {
             _ = openGenericBehaviorType ?? throw new ArgumentNullException(nameof(openGenericBehaviorType), "A non-null command behavior type is required");
