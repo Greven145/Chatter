@@ -16,4 +16,13 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!--
+      Chatter.CQRS.nupkg embeds this analyzer only at pack time (see its packing target); a
+      ProjectReference here doesn't pull it in automatically. Reference the built analyzer DLL
+      directly - a real NuGet consumer referencing the published package gets it for free.
+    -->
+    <Analyzer Include="..\..\src\Chatter.SourceGenerators\src\Chatter.SourceGenerators\bin\$(Configuration)\netstandard2.0\Chatter.SourceGenerators.dll" />
+  </ItemGroup>
+
 </Project>
