@@ -2,9 +2,17 @@
 
 Real, runnable demonstrations of the Chatter libraries — not unit tests, not synthetic AOT smoke fixtures. Each sample is built and run against real infrastructure before being considered working.
 
+## Registration paths, in general
+
+Chatter now has three ways to wire up handlers/behaviors, demonstrated across these samples:
+
+1. **Scan** (`AddChatterCqrs`/`AddMessageBrokers`) — reflection-based assembly scanning, the original default. Not AOT-safe.
+2. **Manual explicit** (`AddChatterCqrsWithExplicitHandlers` + `AddCommandHandler<T,H>()`/`AddEventHandler`/`AddQueryHandler`/`AddCommandBehavior`, `AddMessageBrokersWithExplicitReceivers` + `AddQueueReceiver<T>`) — AOT-safe, zero reflection, but one call to write per handler/receiver.
+3. **Source-generated** (`Chatter.CQRS.SourceGenerated.GeneratedHandlerRegistration.RegisterAll(services)` / `GeneratedAllCommandsBehaviorRegistration.RegisterAll(services)`) — same AOT safety as manual explicit, but the calls are generated for you at build time. Referencing `Chatter.CQRS` at all is enough — the generator ships embedded as an analyzer inside `Chatter.CQRS.nupkg`, no extra `PackageReference`. Handler discovery needs no marker attribute at all; `[RegisterForAllCommands]` is only needed on a generic behavior class (see `Chatter.Samples.Cqrs`'s `LoggingCommandBehavior<TCommand>`) to have it applied to every discovered command. **As of #408, the generator covers CQRS handlers and all-commands behaviors only — it does not cover message-broker receiver registration.** `Chatter.Samples.RabbitMq.Aot` below still registers its receiver by hand for exactly this reason.
+
 ## Chatter.Samples.Cqrs
 
-`Chatter.CQRS` used standalone, no broker: a command, a query, an event, and a pipeline behavior, wired up via the library's default reflection-based assembly scanning (`AddChatterCqrs`).
+`Chatter.CQRS` used standalone, no broker: a command, a query, an event, and a pipeline behavior — wired up via the **source-generated** registration path (path 3 above). `GeneratedHandlerRegistration.RegisterAll` registers the command/query/event handlers; `LoggingCommandBehavior<TCommand>` is marked `[RegisterForAllCommands]` and `GeneratedAllCommandsBehaviorRegistration.RegisterAll` picks it up for every discovered command. Verified: `dotnet build` is warning-free, and a real run confirms both generated registrations actually dispatch (behavior wraps the command, handler runs, event fires, query reads back the result).
 
 ```bash
 dotnet run --project samples/Chatter.Samples.Cqrs
@@ -48,9 +56,9 @@ Because this project compiles *both* modes into the same binary (picked at runti
 
 The same publish → RabbitMQ → receive round trip as above, but this project contains **zero** reflection-based Chatter API calls at all — no `AddChatterCqrs`, no runtime mode switch, `PublishAot=true` set directly in the csproj. What changes versus the default reflection-based path, concretely:
 
-1. **`AddChatterCqrsWithExplicitHandlers` instead of `AddChatterCqrs`** — no assembly scan; handlers are registered one at a time via `AddCommandHandler<TCommand, THandler>()`.
+1. **`AddChatterCqrsWithExplicitHandlers` + `GeneratedHandlerRegistration.RegisterAll(services)`** instead of `AddChatterCqrs` — no assembly scan, and no hand-written `AddCommandHandler<T,H>()` either; the source generator finds `PingSentHandler` and emits the registration call at build time.
 2. **`AddMessageBrokersWithExplicitReceivers` instead of `AddMessageBrokers`** — the latter unconditionally scans for `[BrokeredMessage]`-decorated types as part of its own default behavior, even when every receiver is otherwise registered explicitly; the former carries neither `RequiresUnreferencedCode` nor `RequiresDynamicCode` at all.
-3. **`AddQueueReceiver<TMessage>` needs no change** — it already delegates to the AOT-safe `Services.AddReceiver<TMessage>` internally (confirmed by reading `RabbitMqOptionsBuilder.cs`), regardless of which registration path the rest of the app uses.
+3. **`AddQueueReceiver<TMessage>` stays a manual, hand-written call** — it already delegates to the AOT-safe `Services.AddReceiver<TMessage>` internally (confirmed by reading `RabbitMqOptionsBuilder.cs`), so it was never unsafe, but the source generator doesn't cover receiver registration at all yet (see the "Registration paths, in general" section above) — this is a real, current gap, not a choice made for this sample.
 4. **`WithAotJsonSerialization(consumerContext)` with a `[JsonSerializable]`-decorated `JsonSerializerContext`** for every message DTO. This isn't optional polish — without it, the receiver throws at runtime the first time it tries to deserialize a real message under a full AOT publish (hit directly while building `Chatter.Samples.RabbitMq`'s `explicit` mode, before this project existed).
 
 ```bash

@@ -20,4 +20,15 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!--
+      Same reason as Chatter.Samples.Cqrs.csproj: Chatter.CQRS.nupkg only embeds this analyzer at
+      pack time; a ProjectReference here wouldn't pull it in. A ProjectReference would also drag
+      this netstandard2.0 analyzer project into this project's Native AOT publish graph and
+      NETSDK1207-fail (same reasoning as Chatter.Aot.Smoke.Tests.csproj's identical workaround) -
+      reference the built analyzer DLL directly instead.
+    -->
+    <Analyzer Include="..\..\src\Chatter.SourceGenerators\src\Chatter.SourceGenerators\bin\$(Configuration)\netstandard2.0\Chatter.SourceGenerators.dll" />
+  </ItemGroup>
+
 </Project>

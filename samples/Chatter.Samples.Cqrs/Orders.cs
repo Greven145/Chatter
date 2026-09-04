@@ -59,12 +59,12 @@ public sealed class OrderCreatedHandler : IMessageHandler<OrderCreated>
     }
 }
 
-// A cross-cutting pipeline behavior wrapped around every ICommand dispatch, registered via the
-// default reflection-based CommandPipelineBuilder.WithBehavior — this sample demonstrates the
-// library's standard (non-AOT-safe) registration surface; see Chatter.Samples.RabbitMq for the
-// AOT-safe explicit alternative. Closed-generic behavior registration (WithBehavior<T>() for one
-// specific command) requires the behavior itself to be generic over the command type — the
-// library resolves ICommandBehavior<> by reflecting on the behavior type's own generic arguments.
+// A cross-cutting pipeline behavior wrapped around every ICommand dispatch. [RegisterForAllCommands]
+// is what the AllCommandsBehaviorRegistrationGenerator looks for: a generic behavior class, arity
+// one, closed on its own type parameter over ICommandBehavior<> - exactly this shape - gets a
+// generated AddCommandBehavior<TCommand, LoggingCommandBehavior<TCommand>>() call emitted for
+// every ICommand type the generator finds in this compilation, with zero reflection at runtime.
+[Chatter.CQRS.Pipeline.RegisterForAllCommands]
 public sealed class LoggingCommandBehavior<TCommand> : ICommandBehavior<TCommand> where TCommand : ICommand
 {
     public async Task Handle(TCommand message, IMessageHandlerContext messageHandlerContext, CommandHandlerDelegate next)
