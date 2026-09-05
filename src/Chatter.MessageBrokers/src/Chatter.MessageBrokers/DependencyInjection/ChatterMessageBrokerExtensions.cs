@@ -253,8 +253,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <param name="builder">The singleton <see cref="ChatterBuilder"/> instance used for registration.</param>
         /// <returns>The singleton <see cref="IChatterBuilder"/> instance.</returns>
-        [RequiresUnreferencedCode("Scans assemblies for BrokeredMessageAttribute-decorated types and registers their receivers via reflection. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
-        [RequiresDynamicCode("Scans assemblies for BrokeredMessageAttribute-decorated types and registers their receivers via reflection. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative.")]
+        [RequiresUnreferencedCode("Scans assemblies for BrokeredMessageAttribute-decorated types and registers their receivers via reflection. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative, or call Chatter.MessageBrokers.SourceGenerated.GeneratedReceiverRegistration.RegisterAll(services) for an AOT-safe, source-generated one — referencing Chatter.CQRS already includes the generator, no extra package needed.")]
+        [RequiresDynamicCode("Scans assemblies for BrokeredMessageAttribute-decorated types and registers their receivers via reflection. Use AddReceiver<TMessage> for an AOT-safe, explicit alternative, or call Chatter.MessageBrokers.SourceGenerated.GeneratedReceiverRegistration.RegisterAll(services) for an AOT-safe, source-generated one — referencing Chatter.CQRS already includes the generator, no extra package needed.")]
         private static IChatterBuilder AddAllReceivers(this IChatterBuilder builder, IEnumerable<Assembly> assemblies)
         {
             var messages = FindBrokeredMessagesWithReceiversInAssembliesByType(assemblies);
@@ -360,6 +360,18 @@ namespace Microsoft.Extensions.DependencyInjection
                 using var scope = sp.CreateScope();
                 return new BrokeredMessageReceiverBackgroundService<TMessage>(options, scope.ServiceProvider);
             });
+        }
+
+        // AOT-safe, attribute-driven registration seam: AddReceiver<TMessage>(string,...) guards against
+        // TMessage carrying BrokeredMessageAttribute (to catch an accidental double-registration on the
+        // manual path), so it cannot be used here. This overload is for a caller that already has the
+        // options — a BrokeredMessageAttribute's values resolved at compile time by
+        // Chatter.SourceGenerators, or supplied directly — and intentionally bypasses that guard.
+        public static IServiceCollection AddReceiver<TMessage>(this IServiceCollection services, ReceiverOptions options)
+            where TMessage : class, IMessage
+        {
+            services.AddReceiverImpl<TMessage>(options);
+            return services;
         }
 
         [RequiresUnreferencedCode("Calls Type.GetInterfaces() on types discovered via assembly scan.")]

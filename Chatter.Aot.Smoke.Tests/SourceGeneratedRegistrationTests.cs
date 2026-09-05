@@ -2,8 +2,12 @@ using Chatter.Aot.Smoke.Tests.Fakes;
 using Chatter.CQRS;
 using Chatter.CQRS.Queries;
 using Chatter.CQRS.SourceGenerated;
+using Chatter.MessageBrokers.Receiving;
+using Chatter.MessageBrokers.SourceGenerated;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using System.Linq;
 
 namespace Chatter.Aot.Smoke.Tests;
 
@@ -85,5 +89,25 @@ public class SourceGeneratedRegistrationTests
 
         Assert.Equal(["handler"], command.ExecutionOrder);
         Assert.Contains(nameof(GeneratedBehaviorPingCommand), GeneratedAllCommandsBehavior<GeneratedBehaviorPingCommand>.InvokedFor);
+    }
+
+    [Fact]
+    public void GeneratedReceiverRegistration_UnderNativeAot_ConstructsReceiverAndHostedServiceWithoutReflection()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        var configuration = new ConfigurationBuilder().Build();
+
+        var chatterBuilder = services.AddChatterCqrsWithExplicitHandlers(configuration);
+        chatterBuilder.AddMessageBrokersWithExplicitReceivers();
+        GeneratedReceiverRegistration.RegisterAll(services);
+
+        using var provider = services.BuildServiceProvider();
+
+        var receiver = provider.GetRequiredService<IBrokeredMessageReceiver<GeneratedPongMessage>>();
+        Assert.NotNull(receiver);
+
+        var hostedServices = provider.GetServices<IHostedService>().ToList();
+        Assert.NotEmpty(hostedServices);
     }
 }
