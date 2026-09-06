@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Chatter.CQRS
@@ -28,7 +29,7 @@ namespace Chatter.CQRS
         }
 
         ///<inheritdoc/>
-        public IDispatchMessages GetDispatcher<TMessage>() where TMessage : IMessage
+        public IDispatchMessages GetDispatcher<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>() where TMessage : IMessage
         {
             if (_dispatchers.TryGetValue(typeof(TMessage), out var self))
             {

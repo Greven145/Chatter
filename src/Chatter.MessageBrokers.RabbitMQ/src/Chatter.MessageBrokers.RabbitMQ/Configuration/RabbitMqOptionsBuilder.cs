@@ -2,6 +2,7 @@ using Chatter.CQRS;
 using Chatter.MessageBrokers.Receiving;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Chatter.MessageBrokers.RabbitMQ.Configuration
 {
@@ -122,7 +123,7 @@ namespace Chatter.MessageBrokers.RabbitMQ.Configuration
         /// <summary>
         /// Registers a receiver for <typeparamref name="TMessage"/> bound to the supplied queue.
         /// </summary>
-        public RabbitMqOptionsBuilder AddQueueReceiver<TMessage>(string queueName,
+        public RabbitMqOptionsBuilder AddQueueReceiver<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(string queueName,
                                                                  string errorQueuePath = null,
                                                                  string description = null,
                                                                  TransactionMode? transactionMode = null,

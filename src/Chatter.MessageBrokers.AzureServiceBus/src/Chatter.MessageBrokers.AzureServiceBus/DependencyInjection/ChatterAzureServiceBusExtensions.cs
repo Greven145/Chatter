@@ -15,6 +15,7 @@ using Chatter.MessageBrokers.Recovery.CircuitBreaker;
 using Chatter.MessageBrokers.Recovery.Retry;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ServiceBusClient = Azure.Messaging.ServiceBus.ServiceBusClient;
 using ServiceBusClientOptions = Azure.Messaging.ServiceBus.ServiceBusClientOptions;
@@ -162,7 +163,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return new ServiceBusClient(fullyQualifiedNamespace, options.TokenCredential, clientOptions);
         }
 
-        public static ServiceBusOptionsBuilder AddTopicSubscription<TMessage>(this ServiceBusOptionsBuilder builder,
+        public static ServiceBusOptionsBuilder AddTopicSubscription<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(this ServiceBusOptionsBuilder builder,
                                                                               string topicName,
                                                                               string subscriptionName,
                                                                               string errorQueuePath = null,
@@ -180,7 +181,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return builder;
         }
 
-        public static ServiceBusOptionsBuilder AddQueueReceiver<TMessage>(this ServiceBusOptionsBuilder builder,
+        public static ServiceBusOptionsBuilder AddQueueReceiver<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(this ServiceBusOptionsBuilder builder,
                                                                           string queueName,
                                                                           string errorQueuePath = null,
                                                                           string description = null,
@@ -198,7 +199,7 @@ namespace Microsoft.Extensions.DependencyInjection
         // Session-mode sibling of AddTopicSubscription: registers a session-enabled topic subscription. Mirrors
         // AddTopicSubscription exactly, marking the receiver session-mode in the registry (RequiresSession=true)
         // so ServiceBusReceiver.CreateProductionReceiver selects the session adapter for the topic.
-        public static ServiceBusOptionsBuilder AddSessionTopicSubscription<TMessage>(this ServiceBusOptionsBuilder builder,
+        public static ServiceBusOptionsBuilder AddSessionTopicSubscription<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(this ServiceBusOptionsBuilder builder,
                                                                                      string topicName,
                                                                                      string subscriptionName,
                                                                                      string errorQueuePath = null,
@@ -219,7 +220,7 @@ namespace Microsoft.Extensions.DependencyInjection
         // Session-mode sibling of AddQueueReceiver: registers a session-enabled queue receiver. Mirrors
         // AddQueueReceiver exactly, marking the receiver session-mode in the registry (RequiresSession=true) so
         // ServiceBusReceiver.CreateProductionReceiver selects the session adapter for the queue.
-        public static ServiceBusOptionsBuilder AddSessionQueueReceiver<TMessage>(this ServiceBusOptionsBuilder builder,
+        public static ServiceBusOptionsBuilder AddSessionQueueReceiver<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(this ServiceBusOptionsBuilder builder,
                                                                                  string queueName,
                                                                                  string errorQueuePath = null,
                                                                                  string description = null,

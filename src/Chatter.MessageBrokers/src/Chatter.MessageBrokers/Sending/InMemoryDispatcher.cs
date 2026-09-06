@@ -1,5 +1,6 @@
 ﻿using Chatter.CQRS;
 using Chatter.CQRS.Context;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace Chatter.MessageBrokers.Sending
@@ -11,7 +12,7 @@ namespace Chatter.MessageBrokers.Sending
         public InMemoryDispatcher(IMessageHandlerContext context) => _context = context;
 
         /// <inheritdoc/>
-        public Task Dispatch<TMessage>(TMessage message) where TMessage : IMessage
+        public Task Dispatch<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(TMessage message) where TMessage : IMessage
         {
             if (_context.Container.TryGet<IMessageDispatcher>(out var messageDispatcher))
             {

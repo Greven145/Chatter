@@ -8,13 +8,14 @@ using Chatter.MessageBrokers.Sending;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Chatter.SqlChangeFeed
 {
-    class ChangeFeedReceiver<TRowChangeData> : BrokeredMessageReceiver<ProcessChangeFeedCommand<TRowChangeData>>
+    class ChangeFeedReceiver<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TRowChangeData> : BrokeredMessageReceiver<ProcessChangeFeedCommand<TRowChangeData>>
         where TRowChangeData : class, IMessage
     {
         private readonly IServiceScopeFactory _serviceFactory;

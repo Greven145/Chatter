@@ -11,6 +11,7 @@ using Chatter.MessageBrokers.SqlServiceBroker.Receiving.CircuitBreaker;
 using Chatter.MessageBrokers.SqlServiceBroker.Receiving.Retry;
 using Chatter.MessageBrokers.SqlServiceBroker.Sending;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -62,7 +63,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return builder;
         }
 
-        public static SqlServiceBrokerOptionsBuilder AddQueueReceiver<TMessage>(this SqlServiceBrokerOptionsBuilder builder,
+        public static SqlServiceBrokerOptionsBuilder AddQueueReceiver<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(this SqlServiceBrokerOptionsBuilder builder,
                                                                                 string queueName,
                                                                                 string errorQueuePath = null,
                                                                                 string description = null,
