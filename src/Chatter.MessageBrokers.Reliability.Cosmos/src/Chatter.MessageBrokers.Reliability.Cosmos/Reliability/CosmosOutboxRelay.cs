@@ -48,12 +48,13 @@ namespace Chatter.MessageBrokers.Reliability.Cosmos
         private readonly IMessagingInfrastructureProvider _infrastructureProvider;
         private readonly IBodyConverterFactory _bodyConverterFactory;
         private readonly OutboxDeliverySettings _settings;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         // The pre-seam constructor. Maps to the no-resolver verbatim-reconstruction path with the original hard-coded
         // drain behavior (OutboxDeliverySettings.Legacy) so CosmosOutboxRelayHostedService — which constructs the relay
         // this way — stays byte-identical.
-        public CosmosOutboxRelay(IMessagingInfrastructureProvider infrastructureProvider, IBodyConverterFactory bodyConverterFactory)
-            : this(infrastructureProvider, bodyConverterFactory, OutboxDeliverySettings.Legacy)
+        public CosmosOutboxRelay(IMessagingInfrastructureProvider infrastructureProvider, IBodyConverterFactory bodyConverterFactory, JsonSerializerOptions jsonOptions = null)
+            : this(infrastructureProvider, bodyConverterFactory, OutboxDeliverySettings.Legacy, jsonOptions)
         {
         }
 
@@ -62,11 +63,13 @@ namespace Chatter.MessageBrokers.Reliability.Cosmos
         // per-call to ProcessChangeAsync so the relay never carries a resolver it might silently drop.
         internal CosmosOutboxRelay(IMessagingInfrastructureProvider infrastructureProvider,
                                    IBodyConverterFactory bodyConverterFactory,
-                                   OutboxDeliverySettings settings)
+                                   OutboxDeliverySettings settings,
+                                   JsonSerializerOptions jsonOptions = null)
         {
             _infrastructureProvider = infrastructureProvider ?? throw new ArgumentNullException(nameof(infrastructureProvider));
             _bodyConverterFactory = bodyConverterFactory ?? throw new ArgumentNullException(nameof(bodyConverterFactory));
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            _jsonOptions = jsonOptions;
         }
 
         /// <summary>
@@ -152,10 +155,10 @@ namespace Chatter.MessageBrokers.Reliability.Cosmos
             CosmosOutboxDocument.TryGetString(document, CosmosOutboxDocument.MessageContentTypeField, out string messageContentType);
             CosmosOutboxDocument.TryGetString(document, CosmosOutboxDocument.MessageContextField, out string serializedMessageContext);
 
-            // MaterializePersistedContext deserializes the persisted MessageContext JSON string through
-            // ChatterJson.Options, restoring the CLR types the typed (string)/(DateTime?)/integer reads downstream
-            // depend on (parity with OutboxProcessor.Process).
-            IDictionary<string, object> messageContext = MessageContext.MaterializePersistedContext(serializedMessageContext);
+            // MaterializePersistedContext deserializes the persisted MessageContext JSON string against
+            // _jsonOptions (or ChatterJson.Options when null), restoring the CLR types the typed
+            // (string)/(DateTime?)/integer reads downstream depend on (parity with OutboxProcessor.Process).
+            IDictionary<string, object> messageContext = MessageContext.MaterializePersistedContext(serializedMessageContext, _jsonOptions);
 
             string contentType = messageContentType;
             if (string.IsNullOrWhiteSpace(contentType))

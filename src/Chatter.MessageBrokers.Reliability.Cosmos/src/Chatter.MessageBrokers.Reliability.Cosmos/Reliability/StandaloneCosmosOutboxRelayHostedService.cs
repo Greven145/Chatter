@@ -44,7 +44,8 @@ namespace Chatter.MessageBrokers.Reliability.Cosmos
                                                           IMessagingInfrastructureProvider infrastructureProvider,
                                                           IBodyConverterFactory bodyConverterFactory,
                                                           CosmosOutboxRelayOptions options,
-                                                          StandaloneRelayProcessorRegistry processorRegistry = null)
+                                                          StandaloneRelayProcessorRegistry processorRegistry = null,
+                                                          System.Text.Json.JsonSerializerOptions jsonOptions = null)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _ = infrastructureProvider ?? throw new ArgumentNullException(nameof(infrastructureProvider));
@@ -62,7 +63,8 @@ namespace Chatter.MessageBrokers.Reliability.Cosmos
             _relay = new CosmosOutboxRelay(
                 infrastructureProvider,
                 bodyConverterFactory,
-                OutboxDeliverySettings.FromOptions(options));
+                OutboxDeliverySettings.FromOptions(options),
+                jsonOptions);
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
