@@ -19,6 +19,12 @@ namespace Chatter.MessageBrokers
     /// RUNTIME type (never <c>typeof(object)</c>), which makes System.Text.Json resolve a different converter
     /// and therefore cannot re-enter this one — and produces byte-identical output to a plain runtime-typed
     /// serialize.
+    ///
+    /// <see cref="Write"/> serializing the value's runtime type is exactly what makes it permanently
+    /// trim/AOT-analyzer-flagged: there is no fixed <see cref="System.Text.Json.Serialization.Metadata.JsonTypeInfo{T}"/>
+    /// for a type only known once <c>value.GetType()</c> runs, so it stays on the always-flagged
+    /// <see cref="System.Text.Json.JsonSerializerOptions"/>-based overload regardless of which options instance
+    /// is passed.
     /// </remarks>
     internal sealed class MaterializingObjectConverter : JsonConverter<object>
     {

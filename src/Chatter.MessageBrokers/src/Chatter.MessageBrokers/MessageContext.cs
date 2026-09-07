@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Chatter.MessageBrokers
 {
@@ -9,24 +10,27 @@ namespace Chatter.MessageBrokers
         /// <summary>
         /// Deserializes a persisted MessageContext JSON object into a fully-materialized
         /// <c>IDictionary&lt;string, object&gt;</c> whose values carry the CLR types Newtonsoft's untyped
-        /// read would have produced. A thin wrapper over a <see cref="ChatterJson.Options"/> deserialize:
-        /// the global <c>MaterializingObjectConverter</c> registered there materializes every object-typed
-        /// value inline through the shared <see cref="MaterializeJsonElement"/> recipe, so no downstream
-        /// typed reader observes a raw <see cref="JsonElement"/>.
+        /// read would have produced. Deserializes against <paramref name="options"/>, or
+        /// <see cref="ChatterJson.Options"/> when omitted: either way, the global
+        /// <c>MaterializingObjectConverter</c> registered on that options instance materializes every
+        /// object-typed value inline through the shared <see cref="MaterializeJsonElement"/> recipe, so no
+        /// downstream typed reader observes a raw <see cref="JsonElement"/>.
         /// </summary>
         /// <remarks>
         /// INVARIANT: materialization is driven by the registered converter (same shared recipe), so the
         /// per-value parity semantics documented on <see cref="MaterializePersistedContextValue"/> hold
         /// uniformly across all seams. Returns an empty dictionary for null/empty/whitespace json.
         /// </remarks>
-        internal static IDictionary<string, object> MaterializePersistedContext(string json)
+        internal static IDictionary<string, object> MaterializePersistedContext(string json, JsonSerializerOptions options = null)
         {
             if (string.IsNullOrWhiteSpace(json))
             {
                 return new Dictionary<string, object>();
             }
 
-            return JsonSerializer.Deserialize<Dictionary<string, object>>(json, ChatterJson.Options);
+            var effectiveOptions = options ?? ChatterJson.Options;
+            var typeInfo = (JsonTypeInfo<Dictionary<string, object>>)effectiveOptions.GetTypeInfo(typeof(Dictionary<string, object>));
+            return JsonSerializer.Deserialize(json, typeInfo);
         }
 
         /// <summary>
