@@ -5,6 +5,12 @@ namespace Chatter.MessageBrokers.Routing.Slips
 {
     public static class MessageBrokerContextExtensions
     {
+        /// <remarks>
+        /// Same permanent limitation as <see cref="SendOptionsExtensions.WithRoutingSlip"/>: <see cref="RoutingSlip"/>'s
+        /// private <c>[JsonConstructor]</c> is unreachable by source generation, so this deserialize stays on
+        /// the reflection-based <see cref="System.Text.Json.JsonSerializerOptions"/> overload regardless of
+        /// which options instance is passed.
+        /// </remarks>
         public static bool TryGetRoutingSlip(this IMessageBrokerContext mbc, out RoutingSlip routingSlip)
         {
             try

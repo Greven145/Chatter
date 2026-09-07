@@ -7,3 +7,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Chatter.MessageBrokers.SqlServiceBroker.Tests")]
 [assembly: InternalsVisibleTo("Chatter.MessageBrokers.Reliability.Cosmos")]
 [assembly: InternalsVisibleTo("Chatter.Testing.Core")]
+[assembly: InternalsVisibleTo("Chatter.Aot.Smoke.Tests")]

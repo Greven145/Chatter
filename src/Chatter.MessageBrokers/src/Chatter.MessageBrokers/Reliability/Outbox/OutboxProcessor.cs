@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,16 +15,19 @@ namespace Chatter.MessageBrokers.Reliability.Outbox
         private readonly ILogger<OutboxProcessor> _logger;
         private readonly IBodyConverterFactory _bodyConverterFactory;
         private readonly IBrokeredMessageOutbox _brokeredMessageOutbox;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         public OutboxProcessor(IMessagingInfrastructureProvider infrastructureProvider,
                                ILogger<OutboxProcessor> logger,
                                IBodyConverterFactory bodyConverterFactory,
-                               IBrokeredMessageOutbox brokeredMessageOutbox)
+                               IBrokeredMessageOutbox brokeredMessageOutbox,
+                               JsonSerializerOptions jsonOptions = null)
         {
             _infrastructureProvider = infrastructureProvider ?? throw new ArgumentNullException(nameof(infrastructureProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _bodyConverterFactory = bodyConverterFactory ?? throw new ArgumentNullException(nameof(bodyConverterFactory));
             _brokeredMessageOutbox = brokeredMessageOutbox ?? throw new ArgumentNullException(nameof(brokeredMessageOutbox));
+            _jsonOptions = jsonOptions;
         }
 
         public async Task Process(OutboxMessage message, CancellationToken cancellationToken = default)
@@ -37,7 +41,7 @@ namespace Chatter.MessageBrokers.Reliability.Outbox
                 // ChatterJson.Options, where the registered MaterializingObjectConverter restores inline the
                 // CLR types Newtonsoft's untyped read produced — so the (string)/(DateTime?)/integer reads on
                 // the replayed context below and downstream remain correct.
-                IDictionary<string, object> messageContext = MessageContext.MaterializePersistedContext(message.MessageContext);
+                IDictionary<string, object> messageContext = MessageContext.MaterializePersistedContext(message.MessageContext, _jsonOptions);
 
                 var contentType = message.MessageContentType;
                 if (string.IsNullOrWhiteSpace(message.MessageContentType))

@@ -83,13 +83,14 @@ namespace Chatter.MessageBrokers.Reliability.Cosmos
         public CosmosOutboxRelayHostedService(DocumentReliabilityRegistry registry,
                                               CosmosContainerFactory containerFactory,
                                               IMessagingInfrastructureProvider infrastructureProvider,
-                                              IBodyConverterFactory bodyConverterFactory)
+                                              IBodyConverterFactory bodyConverterFactory,
+                                              System.Text.Json.JsonSerializerOptions jsonOptions = null)
         {
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
             _containerFactory = containerFactory ?? throw new ArgumentNullException(nameof(containerFactory));
             _ = infrastructureProvider ?? throw new ArgumentNullException(nameof(infrastructureProvider));
             _ = bodyConverterFactory ?? throw new ArgumentNullException(nameof(bodyConverterFactory));
-            _relay = new CosmosOutboxRelay(infrastructureProvider, bodyConverterFactory);
+            _relay = new CosmosOutboxRelay(infrastructureProvider, bodyConverterFactory, jsonOptions);
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)

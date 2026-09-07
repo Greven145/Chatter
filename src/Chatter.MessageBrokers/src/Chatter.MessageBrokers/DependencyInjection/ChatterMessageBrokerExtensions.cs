@@ -183,13 +183,26 @@ namespace Microsoft.Extensions.DependencyInjection
 
         /// <summary>
         /// Registers a <see cref="JsonSerializerOptions"/>, combining <paramref name="consumerJsonContext"/>
-        /// with Chatter's own envelope-type context, that <see cref="JsonBodyConverter"/> uses instead of
-        /// <see cref="ChatterJson.Options"/>' reflection-based default. AOT/trim-safe; does not change any
-        /// other registration made by <see cref="AddMessageBrokers(IChatterBuilder, Type[])"/>.
+        /// with Chatter's own envelope-type context, that every AOT-aware serialization site
+        /// (<see cref="JsonBodyConverter"/> and friends, <see cref="MessageContext.MaterializePersistedContext"/>,
+        /// the in-memory/Cosmos outbox implementations) uses instead of <see cref="ChatterJson.Options"/>'
+        /// reflection-based default. AOT/trim-safe; does not change any other registration made by
+        /// <see cref="AddMessageBrokers(IChatterBuilder, Type[])"/>.
         /// </summary>
         /// <param name="builder">A <see cref="IChatterBuilder"/> used for registration and setup</param>
         /// <param name="consumerJsonContext">A source-generated <see cref="JsonSerializerContext"/> covering the consumer's own message payload types.</param>
         /// <returns>An <see cref="IChatterBuilder"/> used to configure Chatter capabilities</returns>
+        /// <remarks>
+        /// Uses <see cref="ServiceCollectionExtensions.AddIfNotRegistered{TService}(IServiceCollection, ServiceLifetime, Func{IServiceProvider, TService})"/>:
+        /// if the host application already registers its own <see cref="JsonSerializerOptions"/> singleton for
+        /// unrelated purposes BEFORE calling this method, that pre-existing registration wins and this call
+        /// becomes a no-op — every consumer of the un-keyed optional <c>JsonSerializerOptions</c> constructor
+        /// parameter throughout <c>Chatter.MessageBrokers</c> (not only the ones this method targets) then
+        /// silently receives the host's unrelated options instance instead of the AOT-safe one, which does NOT
+        /// carry the byte-for-byte Newtonsoft wire-parity settings <see cref="ChatterJson"/> otherwise
+        /// guarantees. Call this early in composition, before any other code registers a
+        /// <see cref="JsonSerializerOptions"/> singleton.
+        /// </remarks>
         public static IChatterBuilder WithAotJsonSerialization(this IChatterBuilder builder, JsonSerializerContext consumerJsonContext)
         {
             builder.Services.AddIfNotRegistered(ServiceLifetime.Singleton, _ => ChatterJson.CreateAotOptions(consumerJsonContext));

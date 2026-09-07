@@ -7,6 +7,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,12 +19,14 @@ namespace Chatter.MessageBrokers.Reliability
         private readonly ConcurrentDictionary<string, OutboxMessage> _outbox;
         private readonly ILogger<InMemoryBrokeredMessageOutbox> _logger;
         private readonly ReliabilityOptions _reliabilityOptions;
+        private readonly JsonSerializerOptions _jsonOptions;
 
-        public InMemoryBrokeredMessageOutbox(ILogger<InMemoryBrokeredMessageOutbox> logger, ReliabilityOptions reliabilityOptions)
+        public InMemoryBrokeredMessageOutbox(ILogger<InMemoryBrokeredMessageOutbox> logger, ReliabilityOptions reliabilityOptions, JsonSerializerOptions jsonOptions = null)
         {
             _outbox = new ConcurrentDictionary<string, OutboxMessage>();
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _reliabilityOptions = reliabilityOptions ?? throw new ArgumentNullException(nameof(reliabilityOptions));
+            _jsonOptions = jsonOptions;
         }
 
         public async Task SendToOutbox(IEnumerable<OutboundBrokeredMessage> outboundBrokeredMessages, TransactionContext transactionContext, CancellationToken cancellationToken = default)
@@ -42,10 +46,13 @@ namespace Chatter.MessageBrokers.Reliability
                 transactionId = transaction?.TransactionId ?? transactionId;
             }
 
+            var effectiveOptions = _jsonOptions ?? ChatterJson.Options;
+            var messageContextTypeInfo = (JsonTypeInfo<IDictionary<string, object>>)effectiveOptions.GetTypeInfo(typeof(IDictionary<string, object>));
+
             var outboxMessage = new OutboxMessage
             {
                 MessageId = outboundBrokeredMessage.MessageId,
-                MessageContext = System.Text.Json.JsonSerializer.Serialize(outboundBrokeredMessage.MessageContext, ChatterJson.Options),
+                MessageContext = JsonSerializer.Serialize(outboundBrokeredMessage.MessageContext, messageContextTypeInfo),
                 Destination = outboundBrokeredMessage.Destination,
                 MessageBody = outboundBrokeredMessage.Stringify(),
                 MessageContentType = outboundBrokeredMessage.ContentType,
