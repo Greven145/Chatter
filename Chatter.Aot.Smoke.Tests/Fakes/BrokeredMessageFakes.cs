@@ -22,3 +22,11 @@ public sealed class ExplicitPongMessage : IMessage
 public sealed class GeneratedPongMessage : IMessage
 {
 }
+
+// Deliberately its own, undecorated type: AddQueueReceiver<TMessage> (RabbitMQ's own wrapper)
+// forwards into AddReceiver<TMessage>(string,...), which throws if TMessage carries
+// [BrokeredMessage] — same constraint as ExplicitPongMessage, kept separate to avoid the
+// whole-program-preservation crossover noted above.
+public sealed class RabbitMqPongMessage : IMessage
+{
+}
