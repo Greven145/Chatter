@@ -1,5 +1,6 @@
 ﻿using Chatter.CQRS.Context;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace Chatter.CQRS
@@ -17,14 +18,14 @@ namespace Chatter.CQRS
         }
 
         ///<inheritdoc/>
-        public Task Dispatch<TMessage>(TMessage message) where TMessage : IMessage
+        public Task Dispatch<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(TMessage message) where TMessage : IMessage
         {
             var context = new MessageHandlerContext();
             return Dispatch(message, context);
         }
 
         ///<inheritdoc/>
-        public Task Dispatch<TMessage>(TMessage message, IMessageHandlerContext messageHandlerContext) where TMessage : IMessage
+        public Task Dispatch<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(TMessage message, IMessageHandlerContext messageHandlerContext) where TMessage : IMessage
         {
             messageHandlerContext.Container.GetOrAdd(() => _externalDispatcher);
             messageHandlerContext.Container.GetOrAdd<IMessageDispatcher>(() => this);

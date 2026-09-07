@@ -3,6 +3,7 @@ using Chatter.MessageBrokers.Context;
 using Chatter.MessageBrokers.Sending;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,7 +16,7 @@ namespace Chatter.MessageBrokers.Receiving
         public ScopedReceivedMessageDispatcher(IServiceScopeFactory serviceScopeFactory)
             => _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
 
-        async Task IReceivedMessageDispatcher.DispatchAsync<TMessage>(TMessage payload, MessageBrokerContext messageContext, CancellationToken receiverTokenSource)
+        async Task IReceivedMessageDispatcher.DispatchAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(TMessage payload, MessageBrokerContext messageContext, CancellationToken receiverTokenSource)
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var dispatcher = scope.ServiceProvider.GetRequiredService<IMessageDispatcher>();

@@ -1,4 +1,6 @@
-﻿namespace Chatter.CQRS
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Chatter.CQRS
 {
     /// <summary>
     /// Creates an <see cref="IMessageDispatcher"/>
@@ -10,6 +12,6 @@
         /// </summary>
         /// <typeparam name="TMessage">The type of <see cref="IDispatchMessages"/> to get.</typeparam>
         /// <returns>A message dispatcher</returns>
-        IDispatchMessages GetDispatcher<TMessage>() where TMessage : IMessage;
+        IDispatchMessages GetDispatcher<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>() where TMessage : IMessage;
     }
 }

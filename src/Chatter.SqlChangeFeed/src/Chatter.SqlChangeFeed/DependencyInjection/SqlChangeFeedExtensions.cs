@@ -56,7 +56,7 @@ namespace Chatter.SqlChangeFeed.DependencyInjection
         /// <param name="tableName">The name of the table to watch</param>
         /// <param name="optionsBuilder">An optional builder allowing more complex change feed configuration</param>
         /// <returns><see cref="IChatterBuilder"/></returns>
-        public static IChatterBuilder AddSqlChangeFeed<TRowChangedData>(this IChatterBuilder builder,
+        public static IChatterBuilder AddSqlChangeFeed<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TRowChangedData>(this IChatterBuilder builder,
                                                                           string connectionString,
                                                                           string databaseName,
                                                                           string tableName,

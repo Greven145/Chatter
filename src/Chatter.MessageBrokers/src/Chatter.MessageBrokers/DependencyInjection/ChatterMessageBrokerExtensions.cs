@@ -233,7 +233,7 @@ namespace Microsoft.Extensions.DependencyInjection
                          .Where(type => type.TryGetBrokeredMessageAttribute()?.ReceiverName != null)
                     ).ToList();
 
-        public static MessageBrokerOptionsBuilder AddReceiver<TMessage>(this MessageBrokerOptionsBuilder builder,
+        public static MessageBrokerOptionsBuilder AddReceiver<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(this MessageBrokerOptionsBuilder builder,
                                                                         string receiverPath,
                                                                         string errorQueuePath = null,
                                                                         string description = null,
@@ -265,7 +265,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return builder;
         }
 
-        public static IServiceCollection AddReceiver<TMessage>(this IServiceCollection services,
+        public static IServiceCollection AddReceiver<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(this IServiceCollection services,
                                                                string receiverPath,
                                                                string errorQueuePath = null,
                                                                string description = null,
@@ -349,7 +349,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
         // AOT-safe: registers the closed-generic types directly (no MakeGenericType/Activator.CreateInstance),
         // unlike the shared Type-based AddReceiverImpl core this deliberately does not call into.
-        private static void AddReceiverImpl<TMessage>(this IServiceCollection services, ReceiverOptions options)
+        private static void AddReceiverImpl<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(this IServiceCollection services, ReceiverOptions options)
             where TMessage : class, IMessage
         {
             GetOrAddDiscoveredReceiverRegistry(services).Register(options);
@@ -367,7 +367,7 @@ namespace Microsoft.Extensions.DependencyInjection
         // manual path), so it cannot be used here. This overload is for a caller that already has the
         // options — a BrokeredMessageAttribute's values resolved at compile time by
         // Chatter.SourceGenerators, or supplied directly — and intentionally bypasses that guard.
-        public static IServiceCollection AddReceiver<TMessage>(this IServiceCollection services, ReceiverOptions options)
+        public static IServiceCollection AddReceiver<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(this IServiceCollection services, ReceiverOptions options)
             where TMessage : class, IMessage
         {
             services.AddReceiverImpl<TMessage>(options);

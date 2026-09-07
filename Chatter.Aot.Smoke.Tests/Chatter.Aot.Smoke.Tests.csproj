@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\src\Chatter.CQRS\src\Chatter.CQRS\Chatter.CQRS.csproj" />
     <ProjectReference Include="..\src\Chatter.MessageBrokers\src\Chatter.MessageBrokers\Chatter.MessageBrokers.csproj" />
+    <ProjectReference Include="..\src\Chatter.MessageBrokers.RabbitMQ\src\Chatter.MessageBrokers.RabbitMQ\Chatter.MessageBrokers.RabbitMQ.csproj" />
     <!--
       A ProjectReference here (even with ReferenceOutputAssembly=false) still pulls this netstandard2.0
       analyzer project into the same publish graph and inherits PublishAot/RuntimeIdentifier from the

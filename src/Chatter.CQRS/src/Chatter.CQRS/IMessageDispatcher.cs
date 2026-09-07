@@ -1,4 +1,5 @@
 ﻿using Chatter.CQRS.Context;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace Chatter.CQRS
@@ -14,7 +15,7 @@ namespace Chatter.CQRS
         /// <typeparam name="TMessage">The type of message to be dispatched.</typeparam>
         /// <param name="message">The message to be dispatched.</param>
         /// <returns>An awaitable <see cref="Task"/></returns>
-        Task Dispatch<TMessage>(TMessage message) where TMessage : IMessage;
+        Task Dispatch<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(TMessage message) where TMessage : IMessage;
         /// <summary>
         /// Dispatch an <see cref="IMessage"/> with additional context.
         /// </summary>
@@ -22,6 +23,6 @@ namespace Chatter.CQRS
         /// <param name="message">The message to be dispatched.</param>
         /// <param name="messageHandlerContext">The context to be dispatched with <paramref name="message"/>.</param>
         /// <returns>An awaitable <see cref="Task"/></returns>
-        Task Dispatch<TMessage>(TMessage message, IMessageHandlerContext messageHandlerContext) where TMessage : IMessage;
+        Task Dispatch<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] TMessage>(TMessage message, IMessageHandlerContext messageHandlerContext) where TMessage : IMessage;
     }
 }
