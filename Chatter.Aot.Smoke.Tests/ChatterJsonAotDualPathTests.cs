@@ -62,4 +62,15 @@ public class ChatterJsonAotDualPathTests
 
         Assert.Equal("null", json);
     }
+
+    // Regression guard for the ChatterJson.ReflectionDefaults split: CreateAotOptions and Options are
+    // now built on separate types specifically so referencing one never forces the other's setup to
+    // run. Same JSON behavior on both, but genuinely independent instances, not the same object.
+    [Fact]
+    public void CreateAotOptions_UnderNativeAot_IsIndependentFromReflectionOptions()
+    {
+        var aotOptions = ChatterJson.CreateAotOptions(PingJsonContext.Default);
+
+        Assert.NotSame(ChatterJson.Options, aotOptions);
+    }
 }
