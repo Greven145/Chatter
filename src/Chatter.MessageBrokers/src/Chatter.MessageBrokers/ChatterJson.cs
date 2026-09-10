@@ -10,12 +10,164 @@ namespace Chatter.MessageBrokers
     /// </summary>
     public static class ChatterJson
     {
-        // INVARIANT: Options is constructed once and reused. STJ documents per-call construction
-        // as a performance cliff; a single cached instance is the prescribed pattern.
-        public static readonly JsonSerializerOptions Options = CreateOptions(new DefaultJsonTypeInfoResolver
+        // A type's static field initializers run at first touch of ANY of that type's own static
+        // members (C# beforefieldinit) — so keeping ReflectionDefaults' field initializer directly on
+        // ChatterJson would mean merely calling CreateAotOptions (which never touches ReflectionDefaults)
+        // still pulls in the reflection-based setup below. Isolating it on its own nested type means that
+        // type's initializer only runs when Options' getter is itself reached.
+        private static class ReflectionDefaults
         {
-            Modifiers = { EnableNonPublicSetters, EnableNonPublicParameterlessConstructor }
-        });
+            // INVARIANT: Options is constructed once and reused. STJ documents per-call construction
+            // as a performance cliff; a single cached instance is the prescribed pattern.
+            public static readonly JsonSerializerOptions Options = CreateOptions(new DefaultJsonTypeInfoResolver
+            {
+                Modifiers = { EnableNonPublicSetters, EnableNonPublicParameterlessConstructor }
+            });
+
+            // Contract-model modifier: for any property STJ left unsettable on deserialize
+            // (Set == null — i.e. no public setter and no [JsonInclude]-forced setter) whose
+            // underlying CLR member nonetheless exposes a NON-PUBLIC setter, wire Set to invoke
+            // that setter via reflection. This restores Newtonsoft's default private-setter binding
+            // globally for ALL body/context deserialization through ChatterJson.Options.
+            //
+            // No-op (and MUST stay a no-op) for:
+            //   - properties with a public setter — STJ already set Set (skipped: Set != null)
+            //   - [JsonInclude] members (e.g. RoutingSlip.Route/Attachments/Visited with internal/
+            //     private setters) — STJ already set Set for them (skipped: Set != null)
+            //   - constructor-parameter-bound members on [JsonConstructor] types (RoutingSlip,
+            //     RoutingStep, OutboundBrokeredMessage) and records — these expose NO setter
+            //     (GetSetMethod(nonPublic: true) == null), so ctor binding is untouched
+            //   - fields (IncludeFields) — AttributeProvider is a FieldInfo, not PropertyInfo
+            private static void EnableNonPublicSetters(JsonTypeInfo typeInfo)
+            {
+                if (typeInfo.Kind != JsonTypeInfoKind.Object)
+                {
+                    return;
+                }
+
+                foreach (var property in typeInfo.Properties)
+                {
+                    if (property.Set is not null)
+                    {
+                        // STJ already found a bindable setter (public or [JsonInclude]-forced).
+                        continue;
+                    }
+
+                    if (property.AttributeProvider is not PropertyInfo propertyInfo)
+                    {
+                        // Fields and synthesized members are not non-public-setter properties.
+                        continue;
+                    }
+
+                    var setMethod = propertyInfo.GetSetMethod(nonPublic: true);
+                    if (setMethod is null)
+                    {
+                        // No CLR setter at all (get-only / ctor-bound) — leave to ctor binding.
+                        continue;
+                    }
+
+                    property.Set = (obj, value) => propertyInfo.SetValue(obj, value);
+                }
+            }
+
+            // Contract-model modifier: for an object-kind type that STJ found NO usable creation
+            // mechanism for (CreateObject == null — no public parameterless ctor and no
+            // [JsonConstructor] parameterized binding) but which nonetheless exposes a NON-PUBLIC
+            // parameterless constructor, wire CreateObject to invoke that ctor via reflection. This
+            // restores Newtonsoft's default instantiation of DTOs whose only default constructor is
+            // private/internal; combined with EnableNonPublicSetters the private members then populate.
+            //
+            // CRITICAL GATE: this modifier must NEVER override a PARAMETERIZED construction path. STJ
+            // leaves CreateObject == null NOT ONLY for types it cannot construct, but ALSO for types it
+            // constructs via a PARAMETERIZED constructor — those use an INTERNAL parameterized-creation
+            // delegate, not the public CreateObject. So a DTO with a parameterized [JsonConstructor] (or
+            // constructor-bound get-only members) PLUS a private parameterless ctor would otherwise be
+            // hijacked here: we would find the private parameterless ctor and install it as CreateObject,
+            // making STJ bypass the parameterized constructor and leave get-only ctor-bound properties at
+            // defaults. The gates below ensure we install ONLY when the type genuinely has NO other
+            // creation path. FAIL-SAFE: when uncertain whether STJ is using a parameterized ctor, do NOT
+            // install — the private-parameterless-only DTO is the SOLE case we must enable.
+            //
+            // No-op (and MUST stay a no-op) for:
+            //   - types with a public parameterless ctor — STJ already set CreateObject (skipped:
+            //     CreateObject != null)
+            //   - types annotated with [JsonConstructor] on ANY constructor (parameterized or not) —
+            //     STJ owns construction; never override (RoutingSlip, RoutingStep, OutboundBrokeredMessage)
+            //   - types using parameterized construction / constructor-bound parameters — STJ binds via
+            //     ctor parameters (CreateObject left null for the internal parameterized delegate);
+            //     installing the private parameterless ctor would bypass it and drop get-only ctor-bound
+            //     members. Records and get-only-ctor-bound DTOs fall here.
+            //   - records / types whose only ctor is a required parameterized one — no parameterless ctor
+            //     and a parameterized ctor present, so they are not touched (left to ctor binding)
+            //   - abstract types / interfaces — Kind != Object OR no instantiable ctor
+            private static void EnableNonPublicParameterlessConstructor(JsonTypeInfo typeInfo)
+            {
+                if (typeInfo.Kind != JsonTypeInfoKind.Object)
+                {
+                    return;
+                }
+
+                if (typeInfo.CreateObject is not null)
+                {
+                    // STJ already has a public-ctor creation mechanism.
+                    return;
+                }
+
+                var type = typeInfo.Type;
+                if (type.IsAbstract || type.IsInterface)
+                {
+                    return;
+                }
+
+                var allConstructors = type.GetConstructors(
+                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+                // GATE 1: any [JsonConstructor]-annotated ctor means STJ owns construction — never override.
+                foreach (var candidate in allConstructors)
+                {
+                    if (candidate.GetCustomAttribute<System.Text.Json.Serialization.JsonConstructorAttribute>() is not null)
+                    {
+                        return;
+                    }
+                }
+
+                // GATE 2: any parameterized constructor means a parameterized creation path may exist (STJ
+                // leaves CreateObject null while using its internal parameterized delegate). FAIL-SAFE: if
+                // a parameterized ctor is present we do NOT install — overriding it would bypass the
+                // parameterized construction and drop get-only ctor-bound members. Only a type whose ONLY
+                // constructor is the non-public PARAMETERLESS one is the private-parameterless-only DTO we
+                // must enable.
+                foreach (var candidate in allConstructors)
+                {
+                    if (candidate.GetParameters().Length > 0)
+                    {
+                        return;
+                    }
+                }
+
+                var ctor = type.GetConstructor(
+                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
+                    binder: null,
+                    Type.EmptyTypes,
+                    modifiers: null);
+
+                if (ctor is null || ctor.IsPublic)
+                {
+                    // No parameterless ctor at all, or a public one (already handled by STJ). Only a
+                    // NON-PUBLIC parameterless ctor with NO parameterized sibling is restored here.
+                    return;
+                }
+
+                typeInfo.CreateObject = () => ctor.Invoke(null);
+            }
+        }
+
+        /// <summary>
+        /// The shared reflection-based <see cref="JsonSerializerOptions"/> default. Reading this property
+        /// is what triggers <see cref="ReflectionDefaults"/>' one-time reflection-based setup — a consumer
+        /// who only ever calls <see cref="CreateAotOptions"/> never reaches it.
+        /// </summary>
+        public static JsonSerializerOptions Options => ReflectionDefaults.Options;
 
         /// <summary>
         /// Builds an AOT/trim-safe <see cref="JsonSerializerOptions"/> sharing every non-reflection setting
@@ -159,142 +311,5 @@ namespace Chatter.MessageBrokers
                 new NewtonsoftLenientBooleanConverter(),
             },
         };
-
-        // Contract-model modifier: for any property STJ left unsettable on deserialize
-        // (Set == null — i.e. no public setter and no [JsonInclude]-forced setter) whose
-        // underlying CLR member nonetheless exposes a NON-PUBLIC setter, wire Set to invoke
-        // that setter via reflection. This restores Newtonsoft's default private-setter binding
-        // globally for ALL body/context deserialization through ChatterJson.Options.
-        //
-        // No-op (and MUST stay a no-op) for:
-        //   - properties with a public setter — STJ already set Set (skipped: Set != null)
-        //   - [JsonInclude] members (e.g. RoutingSlip.Route/Attachments/Visited with internal/
-        //     private setters) — STJ already set Set for them (skipped: Set != null)
-        //   - constructor-parameter-bound members on [JsonConstructor] types (RoutingSlip,
-        //     RoutingStep, OutboundBrokeredMessage) and records — these expose NO setter
-        //     (GetSetMethod(nonPublic: true) == null), so ctor binding is untouched
-        //   - fields (IncludeFields) — AttributeProvider is a FieldInfo, not PropertyInfo
-        private static void EnableNonPublicSetters(JsonTypeInfo typeInfo)
-        {
-            if (typeInfo.Kind != JsonTypeInfoKind.Object)
-            {
-                return;
-            }
-
-            foreach (var property in typeInfo.Properties)
-            {
-                if (property.Set is not null)
-                {
-                    // STJ already found a bindable setter (public or [JsonInclude]-forced).
-                    continue;
-                }
-
-                if (property.AttributeProvider is not PropertyInfo propertyInfo)
-                {
-                    // Fields and synthesized members are not non-public-setter properties.
-                    continue;
-                }
-
-                var setMethod = propertyInfo.GetSetMethod(nonPublic: true);
-                if (setMethod is null)
-                {
-                    // No CLR setter at all (get-only / ctor-bound) — leave to ctor binding.
-                    continue;
-                }
-
-                property.Set = (obj, value) => propertyInfo.SetValue(obj, value);
-            }
-        }
-
-        // Contract-model modifier: for an object-kind type that STJ found NO usable creation
-        // mechanism for (CreateObject == null — no public parameterless ctor and no
-        // [JsonConstructor] parameterized binding) but which nonetheless exposes a NON-PUBLIC
-        // parameterless constructor, wire CreateObject to invoke that ctor via reflection. This
-        // restores Newtonsoft's default instantiation of DTOs whose only default constructor is
-        // private/internal; combined with EnableNonPublicSetters the private members then populate.
-        //
-        // CRITICAL GATE: this modifier must NEVER override a PARAMETERIZED construction path. STJ
-        // leaves CreateObject == null NOT ONLY for types it cannot construct, but ALSO for types it
-        // constructs via a PARAMETERIZED constructor — those use an INTERNAL parameterized-creation
-        // delegate, not the public CreateObject. So a DTO with a parameterized [JsonConstructor] (or
-        // constructor-bound get-only members) PLUS a private parameterless ctor would otherwise be
-        // hijacked here: we would find the private parameterless ctor and install it as CreateObject,
-        // making STJ bypass the parameterized constructor and leave get-only ctor-bound properties at
-        // defaults. The gates below ensure we install ONLY when the type genuinely has NO other
-        // creation path. FAIL-SAFE: when uncertain whether STJ is using a parameterized ctor, do NOT
-        // install — the private-parameterless-only DTO is the SOLE case we must enable.
-        //
-        // No-op (and MUST stay a no-op) for:
-        //   - types with a public parameterless ctor — STJ already set CreateObject (skipped:
-        //     CreateObject != null)
-        //   - types annotated with [JsonConstructor] on ANY constructor (parameterized or not) —
-        //     STJ owns construction; never override (RoutingSlip, RoutingStep, OutboundBrokeredMessage)
-        //   - types using parameterized construction / constructor-bound parameters — STJ binds via
-        //     ctor parameters (CreateObject left null for the internal parameterized delegate);
-        //     installing the private parameterless ctor would bypass it and drop get-only ctor-bound
-        //     members. Records and get-only-ctor-bound DTOs fall here.
-        //   - records / types whose only ctor is a required parameterized one — no parameterless ctor
-        //     and a parameterized ctor present, so they are not touched (left to ctor binding)
-        //   - abstract types / interfaces — Kind != Object OR no instantiable ctor
-        private static void EnableNonPublicParameterlessConstructor(JsonTypeInfo typeInfo)
-        {
-            if (typeInfo.Kind != JsonTypeInfoKind.Object)
-            {
-                return;
-            }
-
-            if (typeInfo.CreateObject is not null)
-            {
-                // STJ already has a public-ctor creation mechanism.
-                return;
-            }
-
-            var type = typeInfo.Type;
-            if (type.IsAbstract || type.IsInterface)
-            {
-                return;
-            }
-
-            var allConstructors = type.GetConstructors(
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-
-            // GATE 1: any [JsonConstructor]-annotated ctor means STJ owns construction — never override.
-            foreach (var candidate in allConstructors)
-            {
-                if (candidate.GetCustomAttribute<System.Text.Json.Serialization.JsonConstructorAttribute>() is not null)
-                {
-                    return;
-                }
-            }
-
-            // GATE 2: any parameterized constructor means a parameterized creation path may exist (STJ
-            // leaves CreateObject null while using its internal parameterized delegate). FAIL-SAFE: if
-            // a parameterized ctor is present we do NOT install — overriding it would bypass the
-            // parameterized construction and drop get-only ctor-bound members. Only a type whose ONLY
-            // constructor is the non-public PARAMETERLESS one is the private-parameterless-only DTO we
-            // must enable.
-            foreach (var candidate in allConstructors)
-            {
-                if (candidate.GetParameters().Length > 0)
-                {
-                    return;
-                }
-            }
-
-            var ctor = type.GetConstructor(
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
-                binder: null,
-                Type.EmptyTypes,
-                modifiers: null);
-
-            if (ctor is null || ctor.IsPublic)
-            {
-                // No parameterless ctor at all, or a public one (already handled by STJ). Only a
-                // NON-PUBLIC parameterless ctor with NO parameterized sibling is restored here.
-                return;
-            }
-
-            typeInfo.CreateObject = () => ctor.Invoke(null);
-        }
     }
 }
