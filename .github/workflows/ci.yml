@@ -201,6 +201,21 @@ jobs:
           name: aot-smoke-results
           path: artifacts/aot-smoke/**
 
+  aot-trim-warnings:
+    name: aot trim-warning regression gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - name: Check for new trim-analyzer warnings
+        run: |
+          python3 .github/scripts/check_aot_trim_warnings.py --packages "$RUNNER_TEMP/nuget-packages"
+
   real-namespace-integration:
     name: integration (azureservicebus real namespace)
     runs-on: ubuntu-latest
