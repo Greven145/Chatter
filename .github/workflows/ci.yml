@@ -9,6 +9,9 @@ on:
       - 'tests/**'
       - 'Chatter.Aot.Smoke.Tests/**'
       - '.github/scripts/summarize_aot_smoke.py'
+      - '.github/scripts/check_aot_trim_warnings.py'
+      - '.github/scripts/test_check_aot_trim_warnings.py'
+      - '.github/aot-trim-warnings-baseline.json'
       - '.github/workflows/ci.yml'
   push:
     branches: [master, aotIntegration]
@@ -17,6 +20,9 @@ on:
       - 'tests/**'
       - 'Chatter.Aot.Smoke.Tests/**'
       - '.github/scripts/summarize_aot_smoke.py'
+      - '.github/scripts/check_aot_trim_warnings.py'
+      - '.github/scripts/test_check_aot_trim_warnings.py'
+      - '.github/aot-trim-warnings-baseline.json'
       - '.github/workflows/ci.yml'
 
 permissions:
@@ -202,7 +208,7 @@ jobs:
           path: artifacts/aot-smoke/**
 
   aot-trim-warnings:
-    name: aot trim-warning regression gate
+    name: aot trim-warning check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -212,6 +218,8 @@ jobs:
           dotnet-version: |
             8.0.x
             10.0.x
+      - name: Unit-test the checker
+        run: python3 -m unittest discover -s .github/scripts -p 'test_*.py' -v
       - name: Check for new trim-analyzer warnings
         run: |
           python3 .github/scripts/check_aot_trim_warnings.py --packages "$RUNNER_TEMP/nuget-packages"
