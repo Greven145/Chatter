@@ -19,7 +19,7 @@ namespace Chatter.MessageBrokers.RabbitMQ
 
         public RabbitMqBodyConverter() : this(null) { }
 
-        public RabbitMqBodyConverter(JsonSerializerOptions options)
+        internal RabbitMqBodyConverter(JsonSerializerOptions options)
             => _options = options ?? (RuntimeFeature.IsDynamicCodeSupported
                 ? ChatterJson.Options
                 : throw new InvalidOperationException("No JsonSerializerOptions is available under Native AOT. Register a source-generated JsonSerializerContext with WithAotJsonSerialization."));
