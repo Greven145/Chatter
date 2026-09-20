@@ -12,6 +12,8 @@ using Chatter.MessageBrokers.Recovery.CircuitBreaker;
 using Chatter.MessageBrokers.Recovery.Retry;
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -88,7 +90,8 @@ namespace Microsoft.Extensions.DependencyInjection
             // BodyConverterFactory enumerates it and keys it under its ContentType. The sender and receiver no longer
             // depend on the concrete converter — they resolve through IBodyConverterFactory keyed on
             // RabbitMqOptions.MessageBodyType — so no concrete registration is needed.
-            builder.Services.AddScoped<IBrokeredMessageBodyConverter, RabbitMqBodyConverter>();
+            builder.Services.AddScoped<IBrokeredMessageBodyConverter>(sp => new RabbitMqBodyConverter(
+                RuntimeFeature.IsDynamicCodeSupported ? null : sp.GetRequiredService<JsonSerializerOptions>()));
             builder.Services.AddSingleton(options);
 
             return builder;

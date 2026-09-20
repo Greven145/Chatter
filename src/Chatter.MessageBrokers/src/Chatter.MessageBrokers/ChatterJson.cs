@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
@@ -168,6 +169,11 @@ namespace Chatter.MessageBrokers
         /// who only ever calls <see cref="CreateAotOptions"/> never reaches it.
         /// </summary>
         public static JsonSerializerOptions Options => ReflectionDefaults.Options;
+
+        internal static JsonSerializerOptions ReflectionDefaultOrThrow()
+            => RuntimeFeature.IsDynamicCodeSupported
+                ? Options
+                : throw new InvalidOperationException("No JsonSerializerOptions is available under Native AOT. Register a source-generated JsonSerializerContext with WithAotJsonSerialization.");
 
         /// <summary>
         /// Builds an AOT/trim-safe <see cref="JsonSerializerOptions"/> sharing every non-reflection setting
