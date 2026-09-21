@@ -29,6 +29,11 @@ internal partial class PingJsonContext : JsonSerializerContext
 {
 }
 
+public sealed class PingUndeclaredDto
+{
+    public string? Name { get; set; }
+}
+
 public sealed class PingPrivateSetterDto
 {
     public string? Name { get; private set; }
