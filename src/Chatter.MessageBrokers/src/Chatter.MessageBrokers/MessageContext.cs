@@ -28,7 +28,7 @@ namespace Chatter.MessageBrokers
                 return new Dictionary<string, object>();
             }
 
-            var effectiveOptions = options ?? ChatterJson.Options;
+            var effectiveOptions = options ?? ChatterJson.ReflectionDefaultOrThrow();
             var typeInfo = (JsonTypeInfo<Dictionary<string, object>>)effectiveOptions.GetTypeInfo(typeof(Dictionary<string, object>));
             return JsonSerializer.Deserialize(json, typeInfo);
         }

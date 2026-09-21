@@ -20,7 +20,7 @@ namespace Chatter.MessageBrokers
         // resolves the default parameter value (no registration = no behavior change from before this ctor
         // param existed).
         public JsonBodyConverter(JsonSerializerOptions options = null)
-            => _options = options ?? ChatterJson.Options;
+            => _options = options ?? ChatterJson.ReflectionDefaultOrThrow();
 
         public string ContentType => "application/json";
 

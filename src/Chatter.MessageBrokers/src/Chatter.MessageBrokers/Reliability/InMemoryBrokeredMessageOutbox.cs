@@ -46,7 +46,7 @@ namespace Chatter.MessageBrokers.Reliability
                 transactionId = transaction?.TransactionId ?? transactionId;
             }
 
-            var effectiveOptions = _jsonOptions ?? ChatterJson.Options;
+            var effectiveOptions = _jsonOptions ?? ChatterJson.ReflectionDefaultOrThrow();
             var messageContextTypeInfo = (JsonTypeInfo<IDictionary<string, object>>)effectiveOptions.GetTypeInfo(typeof(IDictionary<string, object>));
 
             var outboxMessage = new OutboxMessage
