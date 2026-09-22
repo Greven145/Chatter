@@ -46,13 +46,11 @@ public class NativeAotJsonDefaultsTests
         Assert.Equal("ping", roundTripped.Name);
         Assert.Equal(PingResultStatus.Closed, roundTripped.Status);
     }
-    // Adversarial-review finding: InboundBrokeredMessage's `bodyConverter ?? new JsonBodyConverter()`
-    // fallback throws for a null bodyConverter. This path is already pinned as always-throwing by
-    // WhenConstructing.MustThrowNullReferenceWhenBodyConverterIsNull (a pre-existing, unrelated typo:
-    // the ctor dereferences the still-null parameter, not the just-assigned property, one line after
-    // the fallback assignment). Under Native AOT the throw fires one line earlier, from the fallback's
-    // own JsonBodyConverter() ctor, as InvalidOperationException instead of NullReferenceException --
-    // not a new failure mode for a call pattern that was already broken on every platform.
+
+    // InboundBrokeredMessage's `bodyConverter ?? new JsonBodyConverter()` fallback resolves the
+    // reflection default under JIT (see WhenConstructing.MustFallBackToDefaultJsonBodyConverterWhenBodyConverterIsNull),
+    // which is unavailable under Native AOT: the fallback's own JsonBodyConverter() constructor throws
+    // InvalidOperationException instead.
     [Fact]
     public void InboundBrokeredMessage_WithNullBodyConverter_ThrowsActionableErrorUnderNativeAot()
     {

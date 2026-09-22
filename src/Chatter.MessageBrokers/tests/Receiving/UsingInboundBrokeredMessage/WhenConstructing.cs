@@ -80,13 +80,12 @@ namespace Chatter.MessageBrokers.Tests.Receiving.UsingInboundBrokeredMessage
             => CreateSut().CorrelationId.Should().BeNull();
 
         [Fact]
-        public void MustThrowNullReferenceWhenBodyConverterIsNull()
+        public void MustFallBackToDefaultJsonBodyConverterWhenBodyConverterIsNull()
         {
-            // INVARIANT: although the constructor defaults BodyConverter to a JsonBodyConverter when null,
-            // it then dereferences the original (still-null) parameter to read ContentType, throwing NRE.
-            FluentActions.Invoking(() =>
-                    new InboundBrokeredMessage("message-id", new byte[] { 1 }, new Dictionary<string, object>(), "receiver-path", null))
-                .Should().Throw<NullReferenceException>();
+            var sut = new InboundBrokeredMessage("message-id", new byte[] { 1 }, new Dictionary<string, object>(), "receiver-path", null);
+
+            sut.BodyConverter.Should().BeOfType<JsonBodyConverter>();
+            sut.MessageContext[MessageContext.ContentType].Should().Be("application/json");
         }
     }
 }
