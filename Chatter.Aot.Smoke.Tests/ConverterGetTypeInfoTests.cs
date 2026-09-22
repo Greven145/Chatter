@@ -4,6 +4,8 @@ using Chatter.MessageBrokers.RabbitMQ;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
+using System.Text.Json;
 using System.Linq;
 
 namespace Chatter.Aot.Smoke.Tests;
@@ -67,4 +69,44 @@ public class ConverterGetTypeInfoTests
 
         Assert.Throws<NotSupportedException>(() => sut.Stringify((object)new PingUndeclaredDto { Name = "x" }));
     }
+    // Adversarial-review finding: MaterializingObjectConverter.Write now calls options.GetTypeInfo(runtimeType)
+    // instead of the JsonSerializerOptions-based overload. Both throw identically for an undeclared runtime
+    // type (verified against the pre-change overload in a throwaway probe) -- this is the pre-existing,
+    // already-documented open-world limit on ChatterMessageBrokerJsonContext, not a change in blast radius.
+    [Fact]
+    public void MaterializingObjectConverter_UnderNativeAot_SerializesEveryDeclaredLeafType()
+    {
+        var options = ChatterJson.CreateAotOptions(PingJsonContext.Default);
+        var context = new Dictionary<string, object>
+        {
+            ["a"] = 1L,
+            ["b"] = 2.5d,
+            ["c"] = System.DateTime.UtcNow,
+            ["d"] = "text",
+            ["e"] = true,
+            ["f"] = 3,
+            ["g"] = System.TimeSpan.FromSeconds(1),
+            ["h"] = System.Guid.NewGuid(),
+            ["i"] = 4UL,
+        };
+
+        var json = JsonSerializer.Serialize(context, options);
+        var roundTripped = JsonSerializer.Deserialize<Dictionary<string, object>>(json, options);
+
+        Assert.NotNull(roundTripped);
+        Assert.Equal(context.Count, roundTripped!.Count);
+    }
+
+    [Fact]
+    public void MaterializingObjectConverter_UnderNativeAot_ThrowsForUndeclaredLeafType()
+    {
+        var options = ChatterJson.CreateAotOptions(PingJsonContext.Default);
+        var context = new Dictionary<string, object>
+        {
+            ["undeclared"] = new PingUndeclaredDto { Name = "x" },
+        };
+
+        Assert.Throws<NotSupportedException>(() => JsonSerializer.Serialize(context, options));
+    }
+
 }

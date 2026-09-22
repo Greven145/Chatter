@@ -46,4 +46,20 @@ public class NativeAotJsonDefaultsTests
         Assert.Equal("ping", roundTripped.Name);
         Assert.Equal(PingResultStatus.Closed, roundTripped.Status);
     }
+    // Adversarial-review finding: InboundBrokeredMessage's `bodyConverter ?? new JsonBodyConverter()`
+    // fallback throws for a null bodyConverter. This path is already pinned as always-throwing by
+    // WhenConstructing.MustThrowNullReferenceWhenBodyConverterIsNull (a pre-existing, unrelated typo:
+    // the ctor dereferences the still-null parameter, not the just-assigned property, one line after
+    // the fallback assignment). Under Native AOT the throw fires one line earlier, from the fallback's
+    // own JsonBodyConverter() ctor, as InvalidOperationException instead of NullReferenceException --
+    // not a new failure mode for a call pattern that was already broken on every platform.
+    [Fact]
+    public void InboundBrokeredMessage_WithNullBodyConverter_ThrowsActionableErrorUnderNativeAot()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            new Chatter.MessageBrokers.Receiving.InboundBrokeredMessage(
+                "message-id", new byte[] { 1 }, new System.Collections.Generic.Dictionary<string, object>(), "receiver-path", null));
+
+        Assert.Contains("WithAotJsonSerialization", ex.Message);
+    }
 }
