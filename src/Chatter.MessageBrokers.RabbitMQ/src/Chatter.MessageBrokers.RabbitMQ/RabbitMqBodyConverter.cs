@@ -2,16 +2,14 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Chatter.MessageBrokers.RabbitMQ
 {
     /// <remarks>
-    /// Same permanent structural limitation as <see cref="Chatter.MessageBrokers.JsonBodyConverter"/>:
-    /// <see cref="Convert{TBody}(byte[])"/>/<see cref="Stringify(object)"/> handle an arbitrary
-    /// runtime-determined body type, so there is no fixed
-    /// <see cref="System.Text.Json.Serialization.Metadata.JsonTypeInfo{T}"/> to route through — these calls
-    /// stay on the always-flagged <see cref="System.Text.Json.JsonSerializerOptions"/>-based overloads regardless
-    /// of which options instance is passed.
+    /// Serializes and deserializes through <see cref="JsonSerializerOptions.GetTypeInfo(System.Type)"/>. Under
+    /// Native AOT the body type MUST be declared in the <see cref="System.Text.Json.Serialization.JsonSerializerContext"/>
+    /// registered with WithAotJsonSerialization; an undeclared type throws <see cref="System.NotSupportedException"/>.
     /// </remarks>
     public class RabbitMqBodyConverter : IBrokeredMessageBodyConverter
     {
@@ -27,7 +25,7 @@ namespace Chatter.MessageBrokers.RabbitMQ
         public string ContentType => "application/json; charset=utf-8";
 
         public TBody Convert<TBody>(byte[] body)
-            => JsonSerializer.Deserialize<TBody>(Stringify(body), _options);
+            => JsonSerializer.Deserialize(Stringify(body), (JsonTypeInfo<TBody>)_options.GetTypeInfo(typeof(TBody)));
 
         public byte[] Convert(object body)
             => GetBytes(Stringify(body));
@@ -36,7 +34,9 @@ namespace Chatter.MessageBrokers.RabbitMQ
             => Encoding.UTF8.GetString(body);
 
         public string Stringify(object body)
-            => JsonSerializer.Serialize(body, _options);
+            => body is null
+                ? "null"
+                : JsonSerializer.Serialize(body, _options.GetTypeInfo(body.GetType()));
 
         public byte[] GetBytes(string body)
             => Encoding.UTF8.GetBytes(body);

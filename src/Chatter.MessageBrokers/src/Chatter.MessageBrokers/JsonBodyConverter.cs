@@ -1,16 +1,13 @@
 ﻿using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Chatter.MessageBrokers
 {
     /// <remarks>
-    /// <see cref="Convert{TBody}(byte[])"/> and <see cref="Stringify(object)"/> handle an arbitrary
-    /// runtime-determined body type — <c>Stringify(object)</c> serializes via <c>body.GetType()</c>, not a
-    /// type fixed at compile time. There is no <see cref="System.Text.Json.Serialization.Metadata.JsonTypeInfo{T}"/>
-    /// to obtain for a type unknown until runtime, so these calls stay on the
-    /// <see cref="System.Text.Json.JsonSerializerOptions"/>-based overloads (permanently trim/AOT-analyzer-flagged
-    /// by their own BCL signature, independent of which <see cref="System.Text.Json.JsonSerializerOptions"/> instance
-    /// is actually passed in) — not a gap threading a different options instance can close.
+    /// Serializes and deserializes through <see cref="JsonSerializerOptions.GetTypeInfo(System.Type)"/>. Under
+    /// Native AOT the body type MUST be declared in the <see cref="System.Text.Json.Serialization.JsonSerializerContext"/>
+    /// registered with WithAotJsonSerialization; an undeclared type throws <see cref="System.NotSupportedException"/>.
     /// </remarks>
     public class JsonBodyConverter : IBrokeredMessageBodyConverter
     {
@@ -25,7 +22,7 @@ namespace Chatter.MessageBrokers
         public string ContentType => "application/json";
 
         public TBody Convert<TBody>(byte[] body)
-            => JsonSerializer.Deserialize<TBody>(Stringify(body), _options);
+            => JsonSerializer.Deserialize(Stringify(body), (JsonTypeInfo<TBody>)_options.GetTypeInfo(typeof(TBody)));
 
         public byte[] Convert(object body)
             => GetBytes(Stringify(body));
@@ -35,8 +32,8 @@ namespace Chatter.MessageBrokers
 
         public string Stringify(object body)
             => body is null
-                ? JsonSerializer.Serialize<object>(null, _options)
-                : JsonSerializer.Serialize(body, body.GetType(), _options);
+                ? "null"
+                : JsonSerializer.Serialize(body, _options.GetTypeInfo(body.GetType()));
 
         public byte[] GetBytes(string body)
             => Encoding.UTF8.GetBytes(body);

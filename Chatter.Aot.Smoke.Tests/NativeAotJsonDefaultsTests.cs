@@ -46,4 +46,18 @@ public class NativeAotJsonDefaultsTests
         Assert.Equal("ping", roundTripped.Name);
         Assert.Equal(PingResultStatus.Closed, roundTripped.Status);
     }
+
+    // InboundBrokeredMessage's `bodyConverter ?? new JsonBodyConverter()` fallback resolves the
+    // reflection default under JIT (see WhenConstructing.MustFallBackToDefaultJsonBodyConverterWhenBodyConverterIsNull),
+    // which is unavailable under Native AOT: the fallback's own JsonBodyConverter() constructor throws
+    // InvalidOperationException instead.
+    [Fact]
+    public void InboundBrokeredMessage_WithNullBodyConverter_ThrowsActionableErrorUnderNativeAot()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            new Chatter.MessageBrokers.Receiving.InboundBrokeredMessage(
+                "message-id", new byte[] { 1 }, new System.Collections.Generic.Dictionary<string, object>(), "receiver-path", null));
+
+        Assert.Contains("WithAotJsonSerialization", ex.Message);
+    }
 }

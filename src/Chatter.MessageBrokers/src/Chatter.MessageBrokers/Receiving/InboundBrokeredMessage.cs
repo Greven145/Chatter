@@ -19,7 +19,7 @@ namespace Chatter.MessageBrokers.Receiving
             MessageReceiverPath = messageReceiverPath;
             BodyConverter = bodyConverter ?? new JsonBodyConverter();
             CorrelationId = GetMessageContextByKey<string>(MessageBrokers.MessageContext.CorrelationId);
-            MessageContextImpl[MessageBrokers.MessageContext.ContentType] = bodyConverter.ContentType;
+            MessageContextImpl[MessageBrokers.MessageContext.ContentType] = BodyConverter.ContentType;
         }
 
         /// <summary>
