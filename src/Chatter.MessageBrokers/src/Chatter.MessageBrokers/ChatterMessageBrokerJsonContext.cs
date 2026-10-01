@@ -43,6 +43,7 @@ namespace Chatter.MessageBrokers
     [JsonSerializable(typeof(Guid))]
     [JsonSerializable(typeof(ulong))]
     [JsonSerializable(typeof(Routing.Slips.RoutingSlip))]
+    [JsonSerializable(typeof(Sending.OutboundBrokeredMessage))]
     internal partial class ChatterMessageBrokerJsonContext : JsonSerializerContext
     {
     }

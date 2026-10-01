@@ -61,5 +61,14 @@ namespace Chatter.MessageBrokers.SqlServiceBroker.Tests.UsingJsonUnicodeBodyConv
 
             act.Should().Throw<NotSupportedException>();
         }
+
+        [Fact]
+        public void MustStringifyNullBodyAsJsonNullWithoutThrowingUnderSuppliedOptions()
+        {
+            var options = ChatterJson.CreateAotOptions(PocoJsonContext.Default);
+            var sut = new JsonUnicodeBodyConverter(options);
+
+            sut.Stringify((object)null).Should().Be("null");
+        }
     }
 }
