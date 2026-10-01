@@ -1,6 +1,5 @@
 using Chatter.Aot.Smoke.Tests.Fakes;
 using Chatter.MessageBrokers.Receiving;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Linq;
@@ -12,14 +11,8 @@ public class SqlServiceBrokerReceiverRegistrationTests
     [Fact]
     public void AddQueueReceiver_UnderNativeAot_ConstructsReceiverAndHostedServiceWithoutReflection()
     {
-        var services = new ServiceCollection();
-        services.AddLogging();
-        var configuration = new ConfigurationBuilder().Build();
-
-        var chatterBuilder = services.AddChatterCqrsWithExplicitHandlers(configuration);
+        var chatterBuilder = AotHostFactory.NewAotHost(out var services);
         chatterBuilder
-            .AddMessageBrokersWithExplicitReceivers()
-            .WithAotJsonSerialization(PingJsonContext.Default)
             .AddSqlServiceBroker(ssb => ssb
                 .AddSqlServiceBrokerOptions(connectionString: "Server=aot-smoke-unused;Database=aot-smoke;")
                 .AddQueueReceiver<SqlServiceBrokerPongMessage>("aot-smoke-ssb-queue"));
