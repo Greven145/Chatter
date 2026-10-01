@@ -76,5 +76,23 @@ namespace Chatter.MessageBrokers.Tests.Routing.Slips.UsingMessageHandlerContextE
             found.Should().BeFalse();
             foundSlip.Should().BeNull();
         }
+
+        [Fact]
+        public void MustReturnFalseInsteadOfThrowingOnNullStoredSlipValue()
+        {
+            // Adversarial-review finding: a null stored value previously reached JsonSerializer.Deserialize
+            // and threw ArgumentNullException uncaught by the InvalidCastException/JsonException catches.
+            var messageContext = new Dictionary<string, object>
+            {
+                [MessageContext.RoutingSlip] = null
+            };
+            var context = CreateContext(messageContext);
+
+            IMessageHandlerContext asHandlerContext = context;
+            var found = asHandlerContext.TryGetRoutingSlip(out var foundSlip);
+
+            found.Should().BeFalse();
+            foundSlip.Should().BeNull();
+        }
     }
 }

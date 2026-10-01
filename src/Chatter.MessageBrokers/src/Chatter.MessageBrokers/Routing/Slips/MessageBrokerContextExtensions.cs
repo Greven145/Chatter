@@ -15,7 +15,7 @@ namespace Chatter.MessageBrokers.Routing.Slips
                 {
                     if (mbc.BrokeredMessage.MessageContext != null)
                     {
-                        if (mbc.BrokeredMessage.MessageContext.TryGetValue(MessageContext.RoutingSlip, out var rs))
+                        if (mbc.BrokeredMessage.MessageContext.TryGetValue(MessageContext.RoutingSlip, out var rs) && rs is not null)
                         {
                             // Attachments (IDictionary<string, object>) values are materialized to the CLR
                             // types Newtonsoft's untyped read produced during this deserialize by the global
