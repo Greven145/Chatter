@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Extensions.DependencyInjection
@@ -177,6 +178,16 @@ namespace Microsoft.Extensions.DependencyInjection
             builder.Services.AddScoped<IBodyConverterFactory, BodyConverterFactory>();
             builder.Services.AddScoped<IBrokeredMessageBodyConverter, TextPlainBodyConverter>();
             builder.Services.AddScoped<IBrokeredMessageBodyConverter, JsonBodyConverter>();
+
+            // BodyConverterFactory enumerates every registered IBrokeredMessageBodyConverter up front to
+            // build its content-type-keyed lookup (BodyConverterFactory.InitProviderLookup), constructing
+            // both converters above regardless of which MessageBodyType a broker module's consumer actually
+            // selects. Neither converter can opt out of needing JsonSerializerOptions under Native AOT by
+            // choosing a non-JSON content type.
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                builder.Services.AddHostedService<AotJsonOptionsStartupGuard>();
+            }
 
             return builder;
         }

@@ -19,7 +19,9 @@ public class BrokeredReceiverRegistrationTests
         var configuration = new ConfigurationBuilder().Build();
 
         var chatterBuilder = services.AddChatterCqrs(configuration, typeof(ScrutorPongMessage));
-        chatterBuilder.AddMessageBrokers(markerTypesForRequiredAssemblies: typeof(ScrutorPongMessage));
+        chatterBuilder
+            .WithAotJsonSerialization(PingJsonContext.Default)
+            .AddMessageBrokers(markerTypesForRequiredAssemblies: typeof(ScrutorPongMessage));
 
         using var provider = services.BuildServiceProvider();
 
@@ -47,7 +49,9 @@ public class BrokeredReceiverRegistrationTests
         // namespace selector that matches nothing here is what actually isolates this test from the
         // still-KnownGap scanned-receiver path exercised above.
         var chatterBuilder = services.AddChatterCqrs(configuration, typeof(IMessage));
-        chatterBuilder.AddMessageBrokers(receiverHandlerSourceBuilder: b => b.WithMarkerTypes(typeof(IMessage)).WithNamespaceSelector("__no_such_namespace__"));
+        chatterBuilder
+            .WithAotJsonSerialization(PingJsonContext.Default)
+            .AddMessageBrokers(receiverHandlerSourceBuilder: b => b.WithMarkerTypes(typeof(IMessage)).WithNamespaceSelector("__no_such_namespace__"));
         services.AddReceiver<ExplicitPongMessage>(receiverPath: "aot-smoke-explicit-queue");
 
         using var provider = services.BuildServiceProvider();
