@@ -1,4 +1,5 @@
 using Chatter.CQRS;
+using Chatter.CQRS.Commands;
 using Chatter.MessageBrokers;
 
 namespace Chatter.Aot.Smoke.Tests.Fakes;
@@ -28,5 +29,23 @@ public sealed class GeneratedPongMessage : IMessage
 // [BrokeredMessage] — same constraint as ExplicitPongMessage, kept separate to avoid the
 // whole-program-preservation crossover noted above.
 public sealed class RabbitMqPongMessage : IMessage
+{
+}
+
+// Own, undecorated type, same constraint and crossover reasoning as RabbitMqPongMessage, but for
+// Azure Service Bus's AddQueueReceiver<TMessage>, which requires ICommand rather than plain IMessage.
+public sealed class AsbPongCommand : ICommand
+{
+}
+
+// Own, undecorated type for SqlServiceBroker's AddQueueReceiver<TMessage>, same crossover reasoning.
+public sealed class SqlServiceBrokerPongMessage : IMessage
+{
+}
+
+// Own type for Chatter.SqlChangeFeed's AddSqlChangeFeed<TRowChangedData>, which additionally requires
+// a public parameterless constructor (`new()`). Same crossover reasoning as the other broker fakes —
+// AddSqlChangeFeed forwards into SqlServiceBroker's AddQueueReceiver<ProcessChangeFeedCommand<TRowChangedData>>.
+public sealed class ChangeFeedPongRow : IMessage
 {
 }
