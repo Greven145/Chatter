@@ -19,6 +19,7 @@ public class RabbitMqReceiverRegistrationTests
         var chatterBuilder = services.AddChatterCqrsWithExplicitHandlers(configuration);
         chatterBuilder
             .AddMessageBrokersWithExplicitReceivers()
+            .WithAotJsonSerialization(PingJsonContext.Default)
             .AddRabbitMq(rmq => rmq
                 .AddRabbitMqOptions(hostName: "aot-smoke-unused-host")
                 .AddQueueReceiver<RabbitMqPongMessage>("aot-smoke-rabbitmq-queue"));
