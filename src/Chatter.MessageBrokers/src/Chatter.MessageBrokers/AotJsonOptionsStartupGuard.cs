@@ -15,12 +15,7 @@ namespace Chatter.MessageBrokers
     public sealed class AotJsonOptionsStartupGuard : IHostedService
     {
         public AotJsonOptionsStartupGuard(IServiceProvider serviceProvider)
-        {
-            if (serviceProvider.GetService<JsonSerializerOptions>() is null)
-            {
-                ChatterJson.ReflectionDefaultOrThrow();
-            }
-        }
+            => _ = serviceProvider.GetService<JsonSerializerOptions>() ?? ChatterJson.ReflectionDefaultOrThrow();
 
         public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
