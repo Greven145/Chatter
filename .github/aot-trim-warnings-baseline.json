@@ -158,30 +158,6 @@
       "message": "Using member 'Chatter.CQRS.Pipeline.CommandPipelineBuilder.WithBehavior(Type)' which has 'RequiresDynamicCodeAttribute' can break functionality when AOT compiling. For a closed generic behavior type, "
     },
     {
-      "file": "src/Chatter.MessageBrokers.SqlServiceBroker/src/Chatter.MessageBrokers.SqlServiceBroker/JsonUnicodeBodyConverter.cs",
-      "code": "IL2026",
-      "line": 11,
-      "message": "Using member 'System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. "
-    },
-    {
-      "file": "src/Chatter.MessageBrokers.SqlServiceBroker/src/Chatter.MessageBrokers.SqlServiceBroker/JsonUnicodeBodyConverter.cs",
-      "code": "IL2026",
-      "line": 20,
-      "message": "Using member 'System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. JS"
-    },
-    {
-      "file": "src/Chatter.MessageBrokers.SqlServiceBroker/src/Chatter.MessageBrokers.SqlServiceBroker/JsonUnicodeBodyConverter.cs",
-      "code": "IL3050",
-      "line": 11,
-      "message": "Using member 'System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)' which has 'RequiresDynamicCodeAttribute' can break functionality when AOT compiling. JSON serializatio"
-    },
-    {
-      "file": "src/Chatter.MessageBrokers.SqlServiceBroker/src/Chatter.MessageBrokers.SqlServiceBroker/JsonUnicodeBodyConverter.cs",
-      "code": "IL3050",
-      "line": 20,
-      "message": "Using member 'System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)' which has 'RequiresDynamicCodeAttribute' can break functionality when AOT compiling. JSON serialization "
-    },
-    {
       "file": "src/Chatter.MessageBrokers/src/Chatter.MessageBrokers/ChatterJson.cs",
       "code": "IL2026",
       "line": 23,
