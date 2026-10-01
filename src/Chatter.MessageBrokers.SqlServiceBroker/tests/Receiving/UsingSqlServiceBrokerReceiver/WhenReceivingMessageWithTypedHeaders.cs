@@ -2,6 +2,7 @@ using Chatter.MessageBrokers.Sending;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using Xunit;
 
 namespace Chatter.MessageBrokers.SqlServiceBroker.Tests.Receiving.UsingSqlServiceBrokerReceiver
@@ -30,9 +31,50 @@ namespace Chatter.MessageBrokers.SqlServiceBroker.Tests.Receiving.UsingSqlServic
     //   type such that a downstream GetMessageContextByKey<int>/<string> read SUCCEEDS rather than throwing
     //   InvalidCastException. This is the regression gate; it does NOT fake the live RECEIVE.
     // -----------------------------------------------------------------------------------------------
-    public class WhenReceivingMessageWithTypedHeaders : Testing.Core.Context
+    public partial class WhenReceivingMessageWithTypedHeaders : Testing.Core.Context
     {
         private const string Destination = "receiver-path";
+
+        private class MarkerDto
+        {
+            public string Name { get; set; }
+        }
+
+        [JsonSerializable(typeof(MarkerDto))]
+        private partial class MarkerJsonContext : JsonSerializerContext
+        {
+        }
+
+        // Pins the fix for the receive seam under the AOT dual path: SqlServiceBrokerReceiver.cs:166/180
+        // deserializes the envelope to OutboundBrokeredMessage via a JsonUnicodeBodyConverter built from
+        // ChatterJson.CreateAotOptions. OutboundBrokeredMessage must be declared in
+        // ChatterMessageBrokerJsonContext or this throws NotSupportedException, which the receiver's own
+        // broad catch (SqlServiceBrokerReceiver.cs:213) swallows — silently treating the raw envelope bytes
+        // as the payload instead of the unwrapped inner body. This proves the envelope itself survives the
+        // round trip under AOT options, not just the reflection default.
+        [Fact]
+        public void MustRoundTripEnvelopeUnderAotOptions()
+        {
+            var aotOptions = ChatterJson.CreateAotOptions(MarkerJsonContext.Default);
+            var bodyConverter = new JsonUnicodeBodyConverter(aotOptions);
+            var sentContext = new Dictionary<string, object>
+            {
+                [MessageContext.ReceiveAttempts] = 4,
+            };
+            var envelope = new OutboundBrokeredMessage(
+                messageId: "envelope-message-id",
+                body: new byte[] { 1, 2, 3 },
+                messageContext: sentContext,
+                destination: Destination,
+                bodyConverter: bodyConverter);
+
+            byte[] wire = bodyConverter.Convert(envelope);
+            var deserializedEnvelope = bodyConverter.Convert<OutboundBrokeredMessage>(wire);
+
+            deserializedEnvelope.MessageId.Should().Be("envelope-message-id");
+            deserializedEnvelope.Body.Should().Equal(1, 2, 3);
+            deserializedEnvelope.Destination.Should().Be(Destination);
+        }
 
         // Builds the on-the-wire envelope exactly as a sender would and as the receiver deserializes it:
         // an OutboundBrokeredMessage serialized via JsonUnicodeBodyConverter (System.Text.Json). The

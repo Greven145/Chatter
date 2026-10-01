@@ -12,6 +12,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -24,6 +25,7 @@ namespace Chatter.MessageBrokers.SqlServiceBroker.Receiving
         private readonly ISqlConnectionSource _connectionSource;
         private readonly ILogger<SqlServiceBrokerReceiver> _logger;
         private readonly IBodyConverterFactory _bodyConverterFactory;
+        private readonly JsonSerializerOptions _jsonOptions;
         private TransactionMode _transactionMode;
         private readonly ConcurrentDictionary<Guid, int> _localReceiverDeliveryAttempts;
         private readonly IServiceScopeFactory _serviceFactory;
@@ -35,12 +37,14 @@ namespace Chatter.MessageBrokers.SqlServiceBroker.Receiving
                                         MessageBrokerOptions messageBrokerOptions,
                                         ILogger<SqlServiceBrokerReceiver> logger,
                                         IBodyConverterFactory bodyConverterFactory,
-                                        IServiceScopeFactory serviceFactory)
+                                        IServiceScopeFactory serviceFactory,
+                                        JsonSerializerOptions jsonOptions = null)
         {
             _ssbOptions = ssbOptions ?? throw new ArgumentNullException(nameof(ssbOptions));
             _connectionSource = connectionSource ?? throw new ArgumentNullException(nameof(connectionSource));
             _logger = logger;
             _bodyConverterFactory = bodyConverterFactory;
+            _jsonOptions = jsonOptions;
             _transactionMode = messageBrokerOptions?.TransactionMode ?? TransactionMode.ReceiveOnly;
             _localReceiverDeliveryAttempts = new ConcurrentDictionary<Guid, int>();
             _serviceFactory = serviceFactory;
@@ -159,7 +163,7 @@ namespace Chatter.MessageBrokers.SqlServiceBroker.Receiving
 
             // The envelope is serialized on the wire using the SSB-configured MessageBodyType (UTF-16 by
             // default via JsonUnicodeBodyConverter), so the envelope must be decoded with that converter.
-            IBrokeredMessageBodyConverter envelopeConverter = new JsonUnicodeBodyConverter();
+            IBrokeredMessageBodyConverter envelopeConverter = new JsonUnicodeBodyConverter(_jsonOptions);
             // The INNER DTO body is encoded by the core dispatcher using the routing ContentType
             // (RoutingOptions.DefaultContentType = "application/json", UTF-8) — independent of the SSB
             // envelope's wire encoding. It must therefore be decoded with the converter for the inner body's
