@@ -1,19 +1,15 @@
-﻿using Chatter.MessageBrokers.Receiving;
+using Chatter.MessageBrokers.Receiving;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Chatter.MessageBrokers.Routing.Slips
 {
     public static class InboundBrokeredMessageExtensions
     {
-        /// <remarks>
-        /// Same permanent limitation as <see cref="SendOptionsExtensions.WithRoutingSlip"/>: <see cref="RoutingSlip"/>'s
-        /// private <c>[JsonConstructor]</c> is unreachable by source generation, so this call stays on the
-        /// reflection-based <see cref="System.Text.Json.JsonSerializerOptions"/> overload regardless of which
-        /// options instance is passed.
-        /// </remarks>
-        public static InboundBrokeredMessage WithRoutingSlip(this InboundBrokeredMessage message, RoutingSlip slip)
+        public static InboundBrokeredMessage WithRoutingSlip(this InboundBrokeredMessage message, RoutingSlip slip, JsonSerializerOptions jsonOptions = null)
         {
-            var serializedRoutingSlip = JsonSerializer.Serialize(slip, ChatterJson.Options);
+            var effectiveOptions = jsonOptions ?? ChatterJson.ReflectionDefaultOrThrow();
+            var serializedRoutingSlip = JsonSerializer.Serialize(slip, (JsonTypeInfo<RoutingSlip>)effectiveOptions.GetTypeInfo(typeof(RoutingSlip)));
             message.MessageContextImpl[MessageContext.RoutingSlip] = serializedRoutingSlip;
             return message;
         }

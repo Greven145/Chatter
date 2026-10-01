@@ -21,12 +21,6 @@ namespace Chatter.MessageBrokers
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <see cref="Routing.Slips.RoutingSlip"/>/<see cref="Routing.Slips.RoutingStep"/> are deliberately NOT
-    /// included: both bind construction through a private <c>[JsonConstructor]</c>, which source generation
-    /// cannot invoke (same accessibility wall documented on <see cref="ChatterJson.CreateAotOptions"/>) — they
-    /// remain reflection-only, same as any private-member consumer DTO.
-    /// </para>
-    /// <para>
     /// PERMANENT, OPEN-WORLD LIMITATION: <c>MessageContext</c>/<see cref="Sending.OutboundBrokeredMessage.MessageContext"/>
     /// is a public <see cref="IDictionary{TKey, TValue}"/> — a consumer (or a future broker adapter) can stamp
     /// a header with any CLR type, not only the ones enumerated above. This context can only ever cover the
@@ -48,6 +42,7 @@ namespace Chatter.MessageBrokers
     [JsonSerializable(typeof(TimeSpan))]
     [JsonSerializable(typeof(Guid))]
     [JsonSerializable(typeof(ulong))]
+    [JsonSerializable(typeof(Routing.Slips.RoutingSlip))]
     internal partial class ChatterMessageBrokerJsonContext : JsonSerializerContext
     {
     }

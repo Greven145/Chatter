@@ -1,17 +1,13 @@
-﻿using Chatter.MessageBrokers.Context;
+using Chatter.MessageBrokers.Context;
+using System;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Chatter.MessageBrokers.Routing.Slips
 {
     public static class MessageBrokerContextExtensions
     {
-        /// <remarks>
-        /// Same permanent limitation as <see cref="SendOptionsExtensions.WithRoutingSlip"/>: <see cref="RoutingSlip"/>'s
-        /// private <c>[JsonConstructor]</c> is unreachable by source generation, so this deserialize stays on
-        /// the reflection-based <see cref="System.Text.Json.JsonSerializerOptions"/> overload regardless of
-        /// which options instance is passed.
-        /// </remarks>
-        public static bool TryGetRoutingSlip(this IMessageBrokerContext mbc, out RoutingSlip routingSlip)
+        public static bool TryGetRoutingSlip(this IMessageBrokerContext mbc, out RoutingSlip routingSlip, JsonSerializerOptions jsonOptions = null)
         {
             try
             {
@@ -23,10 +19,12 @@ namespace Chatter.MessageBrokers.Routing.Slips
                         {
                             // Attachments (IDictionary<string, object>) values are materialized to the CLR
                             // types Newtonsoft's untyped read produced during this deserialize by the global
-                            // MaterializingObjectConverter on ChatterJson.Options, so consumers that set
+                            // MaterializingObjectConverter, present on both ChatterJson.Options and any
+                            // AOT options built via ChatterJson.CreateAotOptions, so consumers that set
                             // slip.Attachments["foo"] = "bar" and read it back as string/int after
                             // TryGetRoutingSlip don't hit cast failures — no per-seam materialization needed.
-                            RoutingSlip theSlip = JsonSerializer.Deserialize<RoutingSlip>((string)rs, ChatterJson.Options);
+                            var effectiveOptions = jsonOptions ?? ChatterJson.ReflectionDefaultOrThrow();
+                            RoutingSlip theSlip = JsonSerializer.Deserialize((string)rs, (JsonTypeInfo<RoutingSlip>)effectiveOptions.GetTypeInfo(typeof(RoutingSlip)));
                             routingSlip = theSlip;
                             return true;
                         }
@@ -42,7 +40,16 @@ namespace Chatter.MessageBrokers.Routing.Slips
                 routingSlip = null;
                 return false;
             }
-            catch
+            // Deliberately narrow: a malformed stored value (InvalidCastException from the (string) cast)
+            // or malformed JSON (JsonException) means "no usable slip", not an error. A type missing from
+            // the AOT options' JsonSerializerContext (NotSupportedException) is a real configuration defect
+            // and must propagate, not read back silently as "no slip".
+            catch (InvalidCastException)
+            {
+                routingSlip = null;
+                return false;
+            }
+            catch (JsonException)
             {
                 routingSlip = null;
                 return false;

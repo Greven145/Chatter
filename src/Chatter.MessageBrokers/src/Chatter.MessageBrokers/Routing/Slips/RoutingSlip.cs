@@ -26,7 +26,7 @@ namespace Chatter.MessageBrokers.Routing.Slips
         public IReadOnlyList<RoutingStep> Visited
         {
             get => (IReadOnlyList<RoutingStep>)_visited;
-            private set => _visited = value is null ? new List<RoutingStep>() : new List<RoutingStep>(value);
+            internal set => _visited = value is null ? new List<RoutingStep>() : new List<RoutingStep>(value);
         }
 
         public string RouteToNextStep()

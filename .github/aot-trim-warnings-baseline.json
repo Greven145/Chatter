@@ -208,50 +208,14 @@
     {
       "file": "src/Chatter.MessageBrokers/src/Chatter.MessageBrokers/Routing/Slips/CommandPipelineBuilderExtensions.cs",
       "code": "IL2026",
-      "line": 10,
+      "line": 17,
       "message": "Using member 'Chatter.CQRS.Pipeline.CommandPipelineBuilder.WithBehavior(Type)' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Reflects over behav"
     },
     {
       "file": "src/Chatter.MessageBrokers/src/Chatter.MessageBrokers/Routing/Slips/CommandPipelineBuilderExtensions.cs",
       "code": "IL3050",
-      "line": 10,
+      "line": 17,
       "message": "Using member 'Chatter.CQRS.Pipeline.CommandPipelineBuilder.WithBehavior(Type)' which has 'RequiresDynamicCodeAttribute' can break functionality when AOT compiling. For a closed generic behavior type, "
-    },
-    {
-      "file": "src/Chatter.MessageBrokers/src/Chatter.MessageBrokers/Routing/Slips/InboundBrokeredMessageExtensions.cs",
-      "code": "IL2026",
-      "line": 16,
-      "message": "Using member 'System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. JS"
-    },
-    {
-      "file": "src/Chatter.MessageBrokers/src/Chatter.MessageBrokers/Routing/Slips/InboundBrokeredMessageExtensions.cs",
-      "code": "IL3050",
-      "line": 16,
-      "message": "Using member 'System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)' which has 'RequiresDynamicCodeAttribute' can break functionality when AOT compiling. JSON serialization "
-    },
-    {
-      "file": "src/Chatter.MessageBrokers/src/Chatter.MessageBrokers/Routing/Slips/MessageBrokerContextExtensions.cs",
-      "code": "IL2026",
-      "line": 29,
-      "message": "Using member 'System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. "
-    },
-    {
-      "file": "src/Chatter.MessageBrokers/src/Chatter.MessageBrokers/Routing/Slips/MessageBrokerContextExtensions.cs",
-      "code": "IL3050",
-      "line": 29,
-      "message": "Using member 'System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)' which has 'RequiresDynamicCodeAttribute' can break functionality when AOT compiling. JSON serializatio"
-    },
-    {
-      "file": "src/Chatter.MessageBrokers/src/Chatter.MessageBrokers/Routing/Slips/SendOptionsExtensions.cs",
-      "code": "IL2026",
-      "line": 18,
-      "message": "Using member 'System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. JS"
-    },
-    {
-      "file": "src/Chatter.MessageBrokers/src/Chatter.MessageBrokers/Routing/Slips/SendOptionsExtensions.cs",
-      "code": "IL3050",
-      "line": 18,
-      "message": "Using member 'System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)' which has 'RequiresDynamicCodeAttribute' can break functionality when AOT compiling. JSON serialization "
     }
   ]
 }

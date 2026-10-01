@@ -5,7 +5,7 @@ namespace Chatter.MessageBrokers.Routing.Slips
     public class RoutingStep
     {
         [JsonConstructor]
-        private RoutingStep() { }
+        internal RoutingStep() { }
 
         internal RoutingStep(string destinationPath) 
             => DestinationPath = destinationPath;
