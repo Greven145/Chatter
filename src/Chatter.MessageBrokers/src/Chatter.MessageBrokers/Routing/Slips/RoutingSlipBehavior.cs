@@ -5,6 +5,7 @@ using Chatter.MessageBrokers.Context;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Chatter.MessageBrokers.Routing.Slips
@@ -12,9 +13,16 @@ namespace Chatter.MessageBrokers.Routing.Slips
     public class RoutingSlipBehavior<TMessage> : ICommandBehavior<TMessage> where TMessage : ICommand
     {
         private readonly ILogger<RoutingSlipBehavior<TMessage>> _logger;
+        private readonly JsonSerializerOptions _jsonOptions;
 
-        public RoutingSlipBehavior(ILogger<RoutingSlipBehavior<TMessage>> logger)
-            => _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        // jsonOptions is DI-resolved when a consumer calls WithAotJsonSerialization, same optional-parameter
+        // pattern as JsonBodyConverter (#509/#18) -- the real, documented production path for this behavior
+        // under Native AOT, so no caller needs to pass it explicitly.
+        public RoutingSlipBehavior(ILogger<RoutingSlipBehavior<TMessage>> logger, JsonSerializerOptions jsonOptions = null)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _jsonOptions = jsonOptions;
+        }
 
         public async Task Handle(TMessage message, IMessageHandlerContext messageHandlerContext, CommandHandlerDelegate next)
         {
@@ -26,7 +34,7 @@ namespace Chatter.MessageBrokers.Routing.Slips
                 return;
             }
 
-            if (!(messageBrokerContext.TryGetRoutingSlip(out var theSlip)))
+            if (!(messageBrokerContext.TryGetRoutingSlip(out var theSlip, _jsonOptions)))
             {
                 _logger.LogTrace($"No routing slip found. Continuing pipeline execution.");
                 await next().ConfigureAwait(false);
@@ -48,7 +56,7 @@ namespace Chatter.MessageBrokers.Routing.Slips
             try
             {
                 _logger.LogTrace($"Sending message to '{theSlip.Route?.FirstOrDefault()?.DestinationPath}'");
-                await messageHandlerContext.Send(message, theSlip).ConfigureAwait(false);
+                await messageHandlerContext.Send(message, theSlip, jsonOptions: _jsonOptions).ConfigureAwait(false);
                 _logger.LogDebug("Sent message to next routing slip destination");
 
             }
