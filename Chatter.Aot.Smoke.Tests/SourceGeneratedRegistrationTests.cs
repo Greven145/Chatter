@@ -99,7 +99,9 @@ public class SourceGeneratedRegistrationTests
         var configuration = new ConfigurationBuilder().Build();
 
         var chatterBuilder = services.AddChatterCqrsWithExplicitHandlers(configuration);
-        chatterBuilder.AddMessageBrokersWithExplicitReceivers();
+        chatterBuilder
+            .WithAotJsonSerialization(PingJsonContext.Default)
+            .AddMessageBrokersWithExplicitReceivers();
         GeneratedReceiverRegistration.RegisterAll(services);
 
         using var provider = services.BuildServiceProvider();

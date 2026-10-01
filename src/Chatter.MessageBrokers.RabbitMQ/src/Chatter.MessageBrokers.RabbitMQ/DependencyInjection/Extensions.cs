@@ -97,7 +97,6 @@ namespace Microsoft.Extensions.DependencyInjection
             else
             {
                 builder.Services.AddScoped<IBrokeredMessageBodyConverter>(sp => new RabbitMqBodyConverter(sp.GetRequiredService<JsonSerializerOptions>()));
-                builder.Services.AddHostedService<AotJsonOptionsStartupGuard>();
             }
             builder.Services.AddSingleton(options);
 

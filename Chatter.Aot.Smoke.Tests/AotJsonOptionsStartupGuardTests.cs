@@ -79,4 +79,45 @@ public class AotJsonOptionsStartupGuardTests
         var hostedServices = provider.GetServices<IHostedService>().ToList();
         Assert.NotEmpty(hostedServices);
     }
+
+    // BodyConverterFactory enumerates every registered IBrokeredMessageBodyConverter up front
+    // (BodyConverterFactory.InitProviderLookup), constructing the core JsonBodyConverter/TextPlainBodyConverter
+    // regardless of which MessageBodyType a consumer actually selects. A non-JSON MessageBodyType does not
+    // exempt a host from needing WithAotJsonSerialization.
+    [Fact]
+    public void RabbitMq_WithNonJsonMessageBodyType_StillThrowsAtStartup()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        var configuration = new ConfigurationBuilder().Build();
+
+        services.AddChatterCqrsWithExplicitHandlers(configuration)
+            .AddMessageBrokersWithExplicitReceivers()
+            .AddRabbitMq(rmq => rmq.AddRabbitMqOptions(hostName: "aot-smoke-unused-host", messageBodyType: "text/plain"));
+
+        using var provider = services.BuildServiceProvider();
+
+        var ex = Assert.Throws<InvalidOperationException>(() => provider.GetServices<IHostedService>().ToList());
+        Assert.Contains("WithAotJsonSerialization", ex.Message);
+    }
+
+    // The guard lives on AddCoreMessageBrokerServices, called by every broker module (RabbitMQ,
+    // SqlServiceBroker, and any other, e.g. Azure Service Bus, which has no AOT-published smoke coverage
+    // of its own yet -- see #429) through AddMessageBrokers/AddMessageBrokersWithExplicitReceivers. Proven
+    // here with no broker module registered at all, confirming the fix is not broker-specific.
+    [Fact]
+    public void CoreMessageBrokers_WithoutAotJsonSerialization_ThrowsAtStartupRegardlessOfBroker()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        var configuration = new ConfigurationBuilder().Build();
+
+        services.AddChatterCqrsWithExplicitHandlers(configuration)
+            .AddMessageBrokersWithExplicitReceivers();
+
+        using var provider = services.BuildServiceProvider();
+
+        var ex = Assert.Throws<InvalidOperationException>(() => provider.GetServices<IHostedService>().ToList());
+        Assert.Contains("WithAotJsonSerialization", ex.Message);
+    }
 }
