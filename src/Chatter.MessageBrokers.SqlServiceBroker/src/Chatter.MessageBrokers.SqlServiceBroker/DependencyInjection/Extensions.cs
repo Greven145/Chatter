@@ -12,8 +12,6 @@ using Chatter.MessageBrokers.SqlServiceBroker.Receiving.Retry;
 using Chatter.MessageBrokers.SqlServiceBroker.Sending;
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
-using System.Text.Json;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -59,14 +57,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 return new MessagingInfrastructure(SSBMessageContext.InfrastructureType, infrastructureFactory, infrastructureFactory);
             });
 
-            if (RuntimeFeature.IsDynamicCodeSupported)
-            {
-                builder.Services.AddScoped<IBrokeredMessageBodyConverter, JsonUnicodeBodyConverter>();
-            }
-            else
-            {
-                builder.Services.AddScoped<IBrokeredMessageBodyConverter>(sp => new JsonUnicodeBodyConverter(sp.GetRequiredService<JsonSerializerOptions>()));
-            }
+            builder.Services.AddAotAwareBodyConverter<JsonUnicodeBodyConverter>(jsonOptions => new JsonUnicodeBodyConverter(jsonOptions));
             builder.Services.AddSingleton(options);
 
             return builder;

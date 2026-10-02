@@ -20,6 +20,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Extensions.DependencyInjection
@@ -190,6 +191,24 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             return builder;
+        }
+
+        // Shared by RabbitMQ's and SqlServiceBroker's own AddXxx(...) registration: under JIT/reflection, the
+        // converter's parameterless constructor is enough; under Native AOT, IBrokeredMessageBodyConverter
+        // providers are resolved from a scope, so the AOT-safe instance (built from whatever JsonSerializerOptions
+        // the consumer registered via WithAotJsonSerialization) must come from a scoped factory instead.
+        internal static IServiceCollection AddAotAwareBodyConverter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TConverter>(this IServiceCollection services, Func<JsonSerializerOptions, TConverter> aotFactory)
+            where TConverter : class, IBrokeredMessageBodyConverter
+        {
+            if (RuntimeFeature.IsDynamicCodeSupported)
+            {
+                services.AddScoped<IBrokeredMessageBodyConverter, TConverter>();
+            }
+            else
+            {
+                services.AddScoped<IBrokeredMessageBodyConverter>(sp => aotFactory(sp.GetRequiredService<JsonSerializerOptions>()));
+            }
+            return services;
         }
 
         /// <summary>
