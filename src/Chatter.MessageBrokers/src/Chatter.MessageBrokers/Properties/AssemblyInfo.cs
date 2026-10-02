@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Chatter.MessageBrokers.Tests")]
 [assembly: InternalsVisibleTo("Chatter.MessageBrokers.AzureServiceBus.Tests")]
 [assembly: InternalsVisibleTo("Chatter.MessageBrokers.RabbitMQ")]
+[assembly: InternalsVisibleTo("Chatter.MessageBrokers.RabbitMQ.Tests")]
 [assembly: InternalsVisibleTo("Chatter.MessageBrokers.SqlServiceBroker")]
 [assembly: InternalsVisibleTo("Chatter.MessageBrokers.SqlServiceBroker.Tests")]
 [assembly: InternalsVisibleTo("Chatter.MessageBrokers.Reliability.Cosmos")]
