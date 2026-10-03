@@ -1,5 +1,3 @@
-using System;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -18,9 +16,7 @@ namespace Chatter.MessageBrokers.RabbitMQ
         public RabbitMqBodyConverter() : this(null) { }
 
         internal RabbitMqBodyConverter(JsonSerializerOptions options)
-            => _options = options ?? (RuntimeFeature.IsDynamicCodeSupported
-                ? ChatterJson.Options
-                : throw new InvalidOperationException("No JsonSerializerOptions is available under Native AOT. Register a source-generated JsonSerializerContext with WithAotJsonSerialization."));
+            => _options = options ?? ChatterJson.ReflectionDefaultOrThrow();
 
         public string ContentType => "application/json; charset=utf-8";
 
